@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nykaa PDP Redesign</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Case study: redesigning Nykaa's Product Detail Page across iOS, Android and mobile web.">
+<meta name="theme-color" content="#FBF8FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131016" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: iOS-first single reading column (max 680px) with full-bleed swipe rails for phone frames; segmented control switches platform panels. */
+:root{
+  --bg:#FBF8FA; --surface:#F3ECF0; --card:#FFFFFF; --line:#E5D9E0;
+  --fg:#1A1420; --muted:#665A63;
+  --pink:#C4005C; --pink-fill:#D1006A; --on-pink:#FFFFFF; --pink-soft:#FCE4EF;
+  --mint:#0A7446; --mint-soft:#E2F4EA;
+  --ink:#1B1626; --on-ink:#F6F0F4; --on-ink-muted:#BDB0BA;
+  --shadow:0 1px 2px rgba(40,10,30,.06),0 8px 24px rgba(40,10,30,.08);
+  --f-display:"Bricolage Grotesque",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;
+  --f-body:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r-phone:22px; --r:14px;
+  --gut-l:max(16px,env(safe-area-inset-left,0px)); --gut-r:max(16px,env(safe-area-inset-right,0px));
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131016; --surface:#1D1820; --card:#211B25; --line:#352C38;
+  --fg:#F4EEF2; --muted:#ADA0AA;
+  --pink:#FF6FAE; --pink-fill:#E0207A; --on-pink:#FFFFFF; --pink-soft:#3A1729;
+  --mint:#5BD597; --mint-soft:#15301F;
+  --ink:#0B090D; --on-ink:#F6F0F4; --on-ink-muted:#ADA0AA;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131016; --surface:#1D1820; --card:#211B25; --line:#352C38;
+  --fg:#F4EEF2; --muted:#ADA0AA;
+  --pink:#FF6FAE; --pink-fill:#E0207A; --on-pink:#FFFFFF; --pink-soft:#3A1729;
+  --mint:#5BD597; --mint-soft:#15301F;
+  --ink:#0B090D; --on-ink:#F6F0F4; --on-ink-muted:#ADA0AA;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:calc(72px + env(safe-area-inset-top,0px))}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+img{max-width:100%;height:auto;display:block}
+[hidden]{display:none!important}
+a{color:var(--pink);text-underline-offset:3px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.25rem,9vw,3.5rem);line-height:1.04;font-weight:800;letter-spacing:-.025em;font-variation-settings:"opsz" 96}
+h2{font-size:clamp(1.75rem,6.4vw,2.375rem);line-height:1.1;font-weight:700}
+h3{font-size:1.25rem;line-height:1.25;font-weight:700}
+p{margin:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:8px;background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;z-index:50}
+.skip:focus{left:16px}
+:focus-visible{outline:3px solid var(--pink);outline-offset:3px;border-radius:6px}
+
+.wrap{max-width:720px;margin-inline:auto;padding-left:var(--gut-l);padding-right:var(--gut-r)}
+.section{padding-block:64px 8px;display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+.section > *{min-width:0}
+.section-tight{padding-block:56px;display:grid;gap:20px}
+.eyebrow{font:500 .75rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--pink)}
+.h-small{font-size:1.25rem}
+.h-sub{font-size:1.125rem;margin-top:12px}
+.h-label{font:500 .75rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.lede{font-size:1.125rem;color:var(--fg);max-width:62ch}
+.section > p,.section-tight > p{max-width:62ch;color:var(--muted)}
+
+/* Top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(18px);backdrop-filter:saturate(1.6) blur(18px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1080px;margin-inline:auto;padding:10px var(--gut-r) 10px var(--gut-l);display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font-weight:600;min-height:44px}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--pink-fill);color:var(--on-pink);display:grid;place-items:center;font:800 1rem/1 var(--f-display)}
+.topnav{display:flex;gap:4px}
+.topnav a{color:var(--muted);text-decoration:none;font-size:.9375rem;padding:10px 10px;border-radius:10px;min-height:44px;display:flex;align-items:center}
+.topnav a:hover{color:var(--fg);background:var(--surface)}
+@media (max-width:620px){.topnav{display:none}}
+.progress{height:2px;background:transparent}
+.progress span{display:block;height:100%;width:0;background:var(--pink-fill);transition:width .1s linear}
+
+/* Hero */
+.hero{padding-block:40px 24px;display:grid;gap:20px}
+.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px;margin:4px 0 0;padding:18px 0;border-block:1px solid var(--line)}
+.meta dt{font:500 .6875rem/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.meta dd{margin:0;font-size:.9375rem;font-weight:500}
+@media (min-width:640px){.meta{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.hero-shots{display:flex;justify-content:center;align-items:flex-end;gap:12px;padding-top:20px}
+.hero-shots .shot{width:min(31%,220px);flex:none}
+.hero-shots .shot.lift .zoom{transform:translateY(-18px)}
+.hero-shots .shot.lift figcaption{transform:translateY(-18px)}
+.hero-shots figcaption{justify-content:center}
+
+/* Phone shots */
+.shot{margin:0;display:grid;gap:10px;align-content:start}
+.shot .zoom{all:unset;cursor:zoom-in;display:block;border-radius:var(--r-phone);overflow:hidden;background:var(--card);box-shadow:var(--shadow);outline:1px solid var(--line);outline-offset:-1px}
+.shot .zoom:focus-visible{outline:3px solid var(--pink);outline-offset:3px}
+.shot img{width:100%}
+.shot figcaption{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.875rem;color:var(--muted);line-height:1.3}
+.shot.note .zoom{border-radius:var(--r)}
+.shot.note{width:220px}
+.plat{font:500 .6875rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;background:var(--surface);color:var(--fg)}
+.plat.ios{background:var(--pink-soft);color:var(--pink)}
+.plat.android{background:var(--mint-soft);color:var(--mint)}
+
+/* Rails */
+.rail{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gut-l) var(--gut-r);padding:4px 16px 20px;margin-inline:calc(-1 * var(--gut-l)) calc(-1 * var(--gut-r));padding-left:var(--gut-l);padding-right:var(--gut-r);scrollbar-width:thin;-webkit-overflow-scrolling:touch;align-items:flex-start}
+.rail > *{scroll-snap-align:start;flex:none}
+.shot.sm{width:210px}
+.shot.sm.tall .zoom{max-height:466px;overflow-y:auto;cursor:zoom-in}
+@media (min-width:720px){.shot.sm{width:230px}.shot.sm.tall .zoom{max-height:511px}}
+
+/* Bands */
+.band{margin-top:64px}
+.band-ink{background:var(--ink);color:var(--on-ink);padding-block:36px}
+.band-ink .wrap{display:grid;gap:20px}
+.band-tint{background:var(--surface)}
+.band-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.chip{font:500 .6875rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 9px;border-radius:999px;white-space:nowrap}
+.chip-sample{background:var(--pink-soft);color:var(--pink)}
+.band-ink .chip-sample{background:rgba(255,255,255,.12);color:var(--on-ink)}
+.stats{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px}
+@media (min-width:640px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stats li{display:grid;gap:6px;padding-top:14px;border-top:1px solid rgba(255,255,255,.18)}
+.stat-num{font:800 2rem/1 var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat-label{font-size:.875rem;color:var(--on-ink-muted);line-height:1.35}
+.footnote{font-size:.8125rem;color:var(--muted)}
+.band-ink .footnote{color:var(--on-ink-muted)}
+
+/* STAR */
+.star{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.star li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;padding:18px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.star-key{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:800 1.25rem/1 var(--f-display);background:var(--pink-soft);color:var(--pink)}
+.star h3{font-size:1.0625rem;margin-bottom:4px}
+.star p{color:var(--muted);font-size:1rem}
+
+/* Research */
+.objective{padding:20px;border-radius:var(--r);background:var(--pink-soft)}
+.objective p{font-size:1.0625rem;font-weight:500}
+.method{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.method li{display:grid;gap:2px;padding:14px 0;border-bottom:1px solid var(--line)}
+.method b{font-weight:600}
+.method span{color:var(--muted);font-size:.9375rem}
+.mini-stats{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:640px){.mini-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.mini-stats li{padding:14px;border-radius:12px;background:var(--surface);font-size:.875rem;color:var(--muted);display:grid;gap:4px}
+.mini-stats span{font:700 1.5rem/1.1 var(--f-display);color:var(--fg);font-variant-numeric:tabular-nums}
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.note-img{margin:0}
+.note-img .zoom{all:unset;cursor:zoom-in;display:block;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.note-img .zoom:focus-visible{outline:3px solid var(--pink);outline-offset:3px}
+
+/* Pair + pains */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:520px}
+.pains{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.pains li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}
+.pain-id{font:500 .875rem/1 var(--f-mono);color:var(--pink);background:var(--pink-soft);border-radius:8px;padding:8px 0;text-align:center}
+.pains b{font-weight:600}
+.pains p{color:var(--muted);font-size:.9375rem;margin-top:2px}
+
+/* Hypotheses */
+.hyps{margin:0;padding-left:1.4em;display:grid;gap:12px;max-width:62ch}
+.hyps li{padding-left:4px;color:var(--muted)}
+.hyps li::marker{font:500 .875rem var(--f-mono);color:var(--pink)}
+.hyps b{color:var(--fg);font-weight:600}
+
+/* Timeline */
+.timeline{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:40px}
+.stage{display:grid;gap:18px}
+.stage-head{display:grid;grid-template-columns:36px minmax(0,1fr);gap:14px}
+.stage-n{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fg);color:var(--bg);font:700 .9375rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.stage-head h3{margin:5px 0 6px}
+.stage-head p{color:var(--muted);font-size:1rem;max-width:58ch}
+.feedback{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.feedback li{display:grid;gap:2px;padding:12px 14px;border-radius:12px;background:var(--surface)}
+.feedback span{font-weight:600}
+.feedback em{font-style:normal;color:var(--muted);font-size:.9375rem}
+.aside-note{font-size:.9375rem;color:var(--muted);padding-left:14px;border-left:2px solid var(--pink)}
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.compare-col{display:grid;gap:14px;align-content:start;min-width:0}
+.compare .shot.sm{width:100%;max-width:230px}
+.pc{display:grid;gap:4px;font-size:.9375rem}
+.pc p{color:var(--muted);margin-bottom:6px}
+.pc .pro{color:var(--mint)}
+.pc .con{color:var(--pink)}
+@media (max-width:480px){.compare{grid-template-columns:minmax(0,1fr)}.compare-col{grid-template-columns:150px minmax(0,1fr);align-items:start}}
+.wide{margin:0;display:grid;gap:10px}
+.wide .zoom{all:unset;cursor:zoom-in;display:block;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#fff}
+.wide .zoom:focus-visible{outline:3px solid var(--pink);outline-offset:3px}
+.wide figcaption{font-size:.875rem;color:var(--muted)}
+
+/* Segmented control */
+.seg-wrap{position:sticky;top:calc(env(safe-area-inset-top,0px) + 59px);z-index:15;padding:12px var(--gut-r) 12px var(--gut-l);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.seg{max-width:420px;margin-inline:auto;display:grid;grid-template-columns:repeat(3,1fr);padding:3px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.seg button{all:unset;text-align:center;min-height:40px;border-radius:9px;font-weight:600;font-size:.9375rem;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.seg button[aria-selected="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button:focus-visible{outline:3px solid var(--pink);outline-offset:1px}
+.panel{display:grid;gap:36px;padding-top:12px}
+.panel:focus-visible{outline:none}
+.pstar{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.pstar div{background:var(--card);padding:16px;display:grid;gap:6px;align-content:start}
+.pstar dt{font:500 .6875rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--pink)}
+.pstar dd{margin:0;font-size:.9375rem;color:var(--muted)}
+@media (max-width:480px){.pstar{grid-template-columns:minmax(0,1fr)}}
+.sol{display:grid;gap:16px;padding-top:28px;border-top:1px solid var(--line)}
+.sol-text{display:grid;gap:10px;max-width:60ch}
+.sol-text p{color:var(--muted)}
+.sol-text .why{font-size:.9375rem;padding:12px 14px;border-radius:12px;background:var(--surface)}
+.sol-text .why b{color:var(--fg)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font:500 .75rem/1 var(--f-mono);padding:5px 8px;border-radius:6px;background:var(--pink-soft);color:var(--pink)}
+.sol-shots{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gut-l) var(--gut-r);padding:4px var(--gut-r) 16px var(--gut-l);margin-inline:calc(-1 * var(--gut-l)) calc(-1 * var(--gut-r));align-items:flex-start}
+.sol-shots > *{flex:none;scroll-snap-align:start}
+
+/* Results */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:.9375rem;min-width:440px}
+th,td{padding:13px 14px;text-align:left;border-bottom:1px solid var(--line)}
+thead th{font:500 .6875rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface)}
+tbody th{font-weight:600}
+td{font-variant-numeric:tabular-nums;color:var(--mint);font-weight:600}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+
+/* Learnings + footer */
+.learn{list-style:none;margin:0;padding:0;display:grid;gap:16px;max-width:62ch}
+.learn li{color:var(--muted);padding-left:16px;border-left:2px solid var(--line)}
+.learn b{display:block;color:var(--fg);font-weight:600;margin-bottom:2px}
+.foot{padding-block:40px 56px;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;font-size:.875rem;color:var(--muted)}
+.totop{min-height:44px;display:inline-flex;align-items:center;font-weight:600}
+
+/* Lightbox */
+dialog#lightbox{padding:0;border:0;background:var(--bg);color:var(--fg);width:100vw;height:100dvh;max-width:none;max-height:none;margin:0}
+dialog#lightbox::backdrop{background:rgba(0,0,0,.6)}
+.lb-bar{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(10px + env(safe-area-inset-top,0px)) var(--gut-r) 10px var(--gut-l);background:var(--bg);border-bottom:1px solid var(--line);z-index:1}
+.lb-bar p{font-weight:600;font-size:.9375rem;min-width:0}
+.lb-close{all:unset;cursor:pointer;min-height:44px;padding:0 14px;border-radius:10px;background:var(--surface);font-weight:600;display:flex;align-items:center}
+.lb-close:focus-visible{outline:3px solid var(--pink)}
+.lb-body{overflow:auto;padding:20px var(--gut-r) calc(24px + env(safe-area-inset-bottom,0px)) var(--gut-l);display:flex;justify-content:center}
+.lb-body img{width:auto;max-width:none;height:auto;border-radius:12px;box-shadow:var(--shadow)}
+.lb-body img.phone{width:min(360px,100%);max-width:100%}
+
+.sec-intro{max-width:62ch;color:var(--muted);margin-top:12px}
+#explorations .wrap > h2,#solutions .wrap > h2{margin-top:20px}
+
+/* Device mockups (bezel only; screens keep their own status bars) */
+.device{--w:260px;position:relative;width:var(--w);max-width:100%;flex:none;padding:calc(var(--w)*.035);border-radius:calc(var(--w)*.15);background:linear-gradient(150deg,var(--bezel-hi),var(--bezel) 40%,var(--bezel-lo));box-shadow:0 0 0 1px var(--bezel-edge),0 30px 60px -20px rgba(40,10,30,.35),0 12px 24px -12px rgba(40,10,30,.25)}
+.device .screen{position:relative;aspect-ratio:360/800;border-radius:calc(var(--w)*.118);overflow:hidden;background:#fff;isolation:isolate}
+.device .screen > img{width:100%;height:auto;display:block}
+.device.ios .screen::after{content:"";position:absolute;z-index:3;top:1.3%;left:50%;width:30%;height:3.6%;transform:translateX(-50%);background:#0b0b0d;border-radius:999px;pointer-events:none}
+.device.android{border-radius:calc(var(--w)*.11);padding:calc(var(--w)*.028)}
+.device.android .screen{border-radius:calc(var(--w)*.085)}
+.device.android .screen::after{content:"";position:absolute;z-index:3;top:1.6%;left:50%;width:calc(var(--w)*.042);aspect-ratio:1;transform:translateX(-50%);background:#0b0b0d;border-radius:50%;pointer-events:none}
+.device.sm{--w:220px}
+.device .screen.scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.device .screen.scroll::-webkit-scrollbar{display:none}
+:root{--bezel:#26222B;--bezel-hi:#4A4450;--bezel-lo:#141216;--bezel-edge:#3a3540}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bezel:#2E2933;--bezel-hi:#5B5462;--bezel-lo:#1A171D;--bezel-edge:#4a4450}}
+:root[data-theme="dark"]{--bezel:#2E2933;--bezel-hi:#5B5462;--bezel-lo:#1A171D;--bezel-edge:#4a4450}
+
+/* Hero fan */
+.hero-stage{overflow:hidden;padding:8px 0 56px}
+.fan{display:flex;justify-content:center;align-items:flex-end;gap:0;max-width:880px;margin-inline:auto;padding-inline:var(--gut-l) var(--gut-r)}
+.fan-item{margin:0;display:grid;justify-items:center;gap:14px}
+.fan-item .device{--w:clamp(150px,38vw,250px)}
+.fan-c{z-index:2}
+.fan-c .device{--w:clamp(170px,44vw,280px)}
+.fan-l{transform:translateX(18%) rotate(-7deg) translateY(10px);z-index:1}
+.fan-r{transform:translateX(-18%) rotate(7deg) translateY(10px);z-index:1}
+@media (prefers-reduced-motion:no-preference){
+  .fan-l{animation:fanL .9s cubic-bezier(.2,.8,.2,1) both}
+  .fan-r{animation:fanR .9s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes fanL{from{transform:translateX(60%) rotate(0) translateY(10px)}}
+  @keyframes fanR{from{transform:translateX(-60%) rotate(0) translateY(10px)}}
+}
+
+/* Before / after */
+.ba-layout{display:grid;gap:24px;justify-items:center;margin-top:8px}
+@media (min-width:760px){#before-after.section{max-width:960px}.ba-layout{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"ctrl ctrl" "dev diff";align-items:center;justify-items:start;column-gap:48px}.ba-controls{grid-area:ctrl}.ba-device{grid-area:dev}.ba-diff{grid-area:diff}}
+.ba-device{--w:min(300px,78vw)}
+.ba{touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+.ba img{width:100%;display:block;pointer-events:none}
+.ba-after-wrap{position:absolute;inset:0;clip-path:inset(0 0 0 var(--pos));z-index:1}
+.ba-handle{position:absolute;top:0;bottom:0;left:var(--pos);width:0;z-index:4;pointer-events:none}
+.ba-handle::before{content:"";position:absolute;top:0;bottom:0;left:-1.5px;width:3px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15),0 0 12px rgba(0,0,0,.25)}
+.ba-handle span{position:absolute;top:50%;left:0;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%;background:var(--pink-fill);box-shadow:0 4px 14px rgba(0,0,0,.3),0 0 0 3px #fff}
+.ba-handle span::before,.ba-handle span::after{content:"";position:absolute;top:50%;width:0;height:0;border:6px solid transparent;transform:translateY(-50%)}
+.ba-handle span::before{left:6px;border-right-color:#fff}
+.ba-handle span::after{right:6px;border-left-color:#fff}
+.ba-range{position:absolute;inset:0;z-index:5;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize;-webkit-appearance:none;appearance:none}
+.ba-range:focus-visible + *,.ba:has(.ba-range:focus-visible) .ba-handle span{outline:3px solid var(--pink);outline-offset:4px}
+.ba-tag{position:absolute;z-index:4;bottom:16%;font:500 .6875rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:rgba(20,16,24,.78);color:#fff;pointer-events:none;transition:opacity .2s}
+.ba-tag-b{left:8%}
+.ba-tag-a{right:8%;background:var(--pink-fill)}
+.ba-diff{list-style:none;margin:0;padding:0;display:grid;gap:10px;width:100%;max-width:440px}
+.ba-diff li{display:grid;gap:6px;padding:14px 16px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.ba-was{font-size:.875rem;color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--pink) 60%,transparent)}
+.ba-now{font-weight:600;display:flex;gap:8px}
+.ba-now::before{content:"";flex:none;width:8px;height:8px;margin-top:.5em;border-radius:50%;background:var(--mint)}
+.seg-sm{max-width:340px;grid-template-columns:repeat(var(--n,2),1fr)}
+.seg-sm button{all:unset;text-align:center;min-height:40px;border-radius:9px;font-weight:600;font-size:.875rem;color:var(--muted);cursor:pointer;padding-inline:10px;transition:background .2s,color .2s}
+.seg-sm button[aria-checked="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg-sm button:focus-visible{outline:3px solid var(--pink);outline-offset:1px}
+.seg-left{margin:0;max-width:380px;--n:3}
+
+/* Exploration rounds */
+.rounds-nav-wrap{position:sticky;top:calc(env(safe-area-inset-top,0px) + 59px);z-index:15;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);margin-top:8px}
+.rounds-nav{max-width:720px;margin-inline:auto;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:10px var(--gut-r) 10px var(--gut-l);scroll-padding-inline:var(--gut-l)}
+.rounds-nav::-webkit-scrollbar{display:none}
+.rounds-nav button{all:unset;flex:none;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 14px 0 6px;border-radius:999px;font-weight:600;font-size:.9375rem;color:var(--muted);cursor:pointer;background:var(--surface);border:1px solid var(--line)}
+.rounds-nav button span{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 .8125rem/1 var(--f-display);background:var(--card);color:var(--fg)}
+.rounds-nav button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.rounds-nav button[aria-selected="true"] span{background:var(--pink-fill);color:var(--on-pink)}
+.rounds-nav button:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.round{display:grid;gap:22px;padding-top:24px}
+.round:focus-visible{outline:none}
+.round-head{display:grid;gap:8px}
+.round-head h3{font-size:1.5rem}
+.round-head p{color:var(--muted);max-width:60ch}
+.round-body{display:grid;gap:22px}
+@media (min-width:720px){.round-body{grid-template-columns:auto minmax(0,1fr);align-items:start;column-gap:36px}}
+.round-dev{display:grid;justify-items:center;gap:12px}
+.round-dev .device{--w:min(250px,66vw)}
+.round-dev .screen > img{transition:opacity .25s}
+.opt-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.opt{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:14px 16px;border-radius:var(--r);border:1px solid var(--line);background:var(--card);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.opt:hover{border-color:color-mix(in srgb,var(--pink) 40%,var(--line))}
+.opt[aria-pressed="true"]{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
+.opt:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.opt-name{font-weight:600}
+.opt-detail{grid-column:1 / -1;color:var(--muted);font-size:.9375rem}
+.opt[aria-pressed="false"] .opt-detail{display:none}
+.verdict{font:500 .6875rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;border-radius:999px;align-self:start;white-space:nowrap}
+.v-chosen{background:var(--mint-soft);color:var(--mint)}
+.v-kept{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
+.v-dropped{background:var(--pink-soft);color:var(--pink)}
+.v-problem{background:var(--surface);color:var(--muted)}
+.cards{display:grid;gap:12px}
+@media (min-width:640px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{padding:16px 18px;border-radius:var(--r);display:grid;gap:8px;align-content:start}
+.card h4{margin:0;font:500 .6875rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.card ul{margin:0;padding-left:1.1em;display:grid;gap:6px;font-size:.9375rem}
+.card p{font-size:.9375rem}
+.card-fb{background:var(--ink);color:var(--on-ink)}
+.card-fb h4{color:#FF8CC0}
+.card-fb li,.card-fb p{color:var(--on-ink-muted)}
+.card-fb li b{color:var(--on-ink)}
+.card-to{background:var(--surface);border:1px solid var(--line)}
+.card-to h4{color:var(--muted)}
+.to-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;font-size:.9375rem}
+.to-row b{font-weight:600}
+.to-gain{color:var(--mint)}
+.to-cost{color:var(--pink)}
+.round-next{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:4px}
+.btn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;background:var(--pink-fill);color:var(--on-pink);font-weight:600;cursor:pointer}
+.btn.ghost{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
+.btn:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.btn[disabled]{opacity:.45;cursor:default}
+
+/* Hotspots */
+#hs-switch{margin-top:4px}
+.hs-layout{display:grid;gap:24px;justify-items:center}
+@media (min-width:720px){.hs-layout{grid-template-columns:auto minmax(0,1fr);align-items:start;justify-items:start;column-gap:36px}}
+.hs-device{--w:min(290px,78vw)}
+.pins{position:absolute;inset:0;z-index:4}
+.pin{all:unset;position:absolute;left:var(--x);top:var(--y);width:28px;height:28px;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;font:700 .8125rem/1 var(--f-display);color:#fff;background:var(--pink-fill);box-shadow:0 0 0 3px rgba(255,255,255,.95),0 4px 12px rgba(0,0,0,.3);cursor:pointer}
+.pin::before{content:"";position:absolute;inset:-8px;border-radius:50%}
+.pin[aria-pressed="true"]{background:#1B1626;box-shadow:0 0 0 3px var(--pink-fill),0 4px 12px rgba(0,0,0,.3)}
+.pin:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media (prefers-reduced-motion:no-preference){.pin[aria-pressed="false"]{animation:pulse 2.4s ease-out infinite}@keyframes pulse{0%{box-shadow:0 0 0 3px rgba(255,255,255,.95),0 0 0 3px rgba(209,0,106,.5)}70%{box-shadow:0 0 0 3px rgba(255,255,255,.95),0 0 0 14px rgba(209,0,106,0)}100%{box-shadow:0 0 0 3px rgba(255,255,255,.95),0 0 0 14px rgba(209,0,106,0)}}}
+.hs-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;width:100%;max-width:460px}
+.hs-item{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 12px;padding:12px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);cursor:pointer}
+.hs-item[aria-pressed="true"]{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
+.hs-item:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.hs-n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 .8125rem/1 var(--f-display);background:var(--pink-soft);color:var(--pink)}
+.hs-item[aria-pressed="true"] .hs-n{background:var(--pink-fill);color:#fff}
+.hs-t{font-weight:600;align-self:center}
+.hs-d{grid-column:2;color:var(--muted);font-size:.9375rem;display:grid;gap:8px}
+.hs-item[aria-pressed="false"] .hs-d{display:none}
+
+/* Pricing flow */
+.flow{display:grid;gap:24px;justify-items:center}
+@media (min-width:720px){.flow{grid-template-columns:auto minmax(0,1fr);align-items:start;justify-items:start;column-gap:36px}}
+.flow-device{--w:min(270px,72vw)}
+.flow-side{display:grid;gap:16px;width:100%}
+.flow-steps{list-style:none;margin:0;padding:0;display:grid;gap:6px;counter-reset:fs}
+.fs{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 12px;padding:10px 12px;border-radius:12px;cursor:pointer}
+.fs:hover{background:var(--surface)}
+.fs[aria-current="step"]{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.fs:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.fs-n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 .8125rem/1 var(--f-display);border:1.5px solid var(--line);color:var(--muted)}
+.fs[aria-current="step"] .fs-n{background:var(--pink-fill);border-color:var(--pink-fill);color:#fff}
+.fs-t{font-weight:600;align-self:center}
+.fs-d{grid-column:2;color:var(--muted);font-size:.9375rem}
+.fs:not([aria-current="step"]) .fs-d{display:none}
+.flow-btns{display:flex;gap:10px}
+.disclose{border:1px solid var(--line);border-radius:var(--r);padding:0 16px;background:var(--card)}
+.disclose summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:600;list-style:none}
+.disclose summary::-webkit-details-marker{display:none}
+.disclose summary::after{content:"+";margin-left:auto;font:500 1.25rem/1 var(--f-mono);color:var(--pink)}
+.disclose[open] summary::after{content:"−"}
+.disclose[open]{padding-bottom:16px}
+
+/* Solutions with mockups */
+.sol{grid-template-columns:minmax(0,1fr)}
+@media (min-width:640px){.sol{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:32px}}
+.sol-media{display:flex;gap:12px;justify-content:center}
+.sol-media.duo .device{--w:min(170px,42vw)}
+.sol-media.scroller{flex-direction:column;align-items:center}
+.scroll-hint{font:500 .6875rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sol .device.sm{--w:min(220px,60vw)}
+
+/* Results bars */
+.bars{display:grid;gap:12px;padding:18px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.bar-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;font-size:.9375rem}
+.bar-label{font-weight:600}
+.bar-track{display:grid;gap:4px}
+.bar{display:block;height:10px;border-radius:999px;width:var(--v);transform-origin:left}
+.b-before{background:color-mix(in srgb,var(--muted) 35%,transparent)}
+.b-after{background:var(--pink-fill)}
+.bar-val{font:500 .8125rem/1 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+.bar-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8125rem;color:var(--muted);padding-top:4px}
+.bar-legend span{display:flex;align-items:center;gap:6px}
+.lg{width:10px;height:10px;border-radius:3px;display:inline-block}
+.lg-b{background:color-mix(in srgb,var(--muted) 35%,transparent)}
+.lg-a{background:var(--pink-fill)}
+.bar-cap{margin-left:auto}
+@media (prefers-reduced-motion:no-preference){.bars.in .bar{animation:grow .9s cubic-bezier(.2,.8,.2,1) both}.bars.in .b-after{animation-delay:.15s}@keyframes grow{from{transform:scaleX(.15)}}}
+
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar" id="top">
+  <div class="topbar-in">
+    <a class="brand" href="#top" aria-label="Back to top">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span class="brand-text">Samikshya Satpathy</span>
+    </a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#before-after">Before / After</a>
+      <a href="#explorations">Explorations</a>
+      <a href="#final">Final</a>
+      <a href="#results">Results</a>
+    </nav>
+  </div>
+  <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <p class="eyebrow">Case study · Nykaa · Product Detail Page</p>
+    <h1 id="hero-title">Making the first scroll do the selling</h1>
+    <p class="lede">A redesign of Nykaa's Product Detail Page across iOS, Android and mobile web. Shoppers landed on a page where the product image filled the first screen and the price, rating and offers sat below it. I rebuilt the first fold so everything needed to decide is visible before the first scroll, then extended it into pricing, offers and social proof.</p>
+
+    <dl class="meta">
+      <div><dt>Role</dt><dd>Product Designer, end to end</dd></div>
+      <div><dt>Team</dt><dd>PM, design lead, iOS, Android &amp; web engineers</dd></div>
+      <div><dt>Platforms</dt><dd>iOS · Android · Mweb</dd></div>
+      <div><dt>Tools</dt><dd>Figma, MS Clarity, ProtoPie</dd></div>
+    </dl>
+  </section>
+
+  <div class="hero-stage" aria-label="Final designs on each platform">
+    <div class="fan">
+      <figure class="fan-item fan-l">
+        <div class="device android"><div class="screen"><img src="assets/img/final-phase2-android.png" alt="Final Phase 2 PDP on Android Chrome with offers strip, image, ratings, shades and sticky price bar" width="360" height="800" decoding="async"></div></div>
+        <figcaption><span class="plat android">Android</span></figcaption>
+      </figure>
+      <figure class="fan-item fan-c">
+        <div class="device ios"><div class="screen"><img src="assets/img/ios-large-t1.png" alt="Final PDP in iOS Safari with coupons strip, image and sticky price bar above the Safari toolbar" width="360" height="800" decoding="async"></div></div>
+        <figcaption><span class="plat ios">iOS</span></figcaption>
+      </figure>
+      <figure class="fan-item fan-r">
+        <div class="device ios"><div class="screen"><img src="assets/img/ios-app-social-proof.png" alt="iOS app PDP with social proof strip above Add to bag" width="360" height="800" decoding="async"></div></div>
+        <figcaption><span class="plat app">App</span></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <!-- IMPACT -->
+  <section class="band band-ink" aria-labelledby="impact-title">
+    <div class="wrap">
+      <div class="band-head">
+        <h2 id="impact-title" class="h-small">Impact after launch</h2>
+        <span class="chip chip-sample">Sample data</span>
+      </div>
+      <ul class="stats" role="list">
+        <li><span class="stat-num">+14.2%</span><span class="stat-label">PDP to add-to-bag rate</span></li>
+        <li><span class="stat-num">2.3×</span><span class="stat-label">Coupon and offer engagement</span></li>
+        <li><span class="stat-num">54→68%</span><span class="stat-label">Average PDP scroll depth</span></li>
+        <li><span class="stat-num">−21%</span><span class="stat-label">Time from landing to add to bag</span></li>
+      </ul>
+      <p class="footnote">Figures are illustrative placeholders for this portfolio and do not reflect Nykaa's internal data.</p>
+    </div>
+  </section>
+
+  <!-- BEFORE / AFTER -->
+  <section class="wrap section" id="before-after" aria-labelledby="ba-title">
+    <p class="eyebrow">Before / After</p>
+    <h2 id="ba-title">Drag to see what changed</h2>
+    <p>Same product, same browser. Drag the handle, or focus it and use the arrow keys, to compare the old first fold with the shipped one.</p>
+
+    <div class="ba-layout">
+      <div class="ba-controls">
+        <div class="seg seg-sm" role="radiogroup" aria-label="Browser">
+          <button type="button" role="radio" aria-checked="true" data-ba="ios">iOS Safari</button>
+          <button type="button" role="radio" aria-checked="false" data-ba="android">Android Chrome</button>
+        </div>
+      </div>
+
+      <div class="device ios ba-device" id="ba-device">
+        <div class="screen ba" id="ba" style="--pos:50%">
+          <img class="ba-before" id="ba-before" src="assets/img/before-ios-safari-360.png" alt="Before: the old PDP, almost entirely product image and promo banner">
+          <div class="ba-after-wrap" aria-hidden="false">
+            <img class="ba-after" id="ba-after" src="assets/img/ios-large-t1.png" alt="After: the redesigned PDP with coupons, brand and price bar in view">
+          </div>
+          <span class="ba-tag ba-tag-b" aria-hidden="true">Before</span>
+          <span class="ba-tag ba-tag-a" aria-hidden="true">After</span>
+          <span class="ba-handle" aria-hidden="true"><span></span></span>
+          <input class="ba-range" id="ba-range" type="range" min="0" max="100" value="50" aria-label="Reveal: 0 shows only before, 100 shows only after">
+        </div>
+      </div>
+
+      <ul class="ba-diff" role="list" aria-label="What changed in the first fold">
+        <li><span class="ba-was">Promo banner + image fill the screen</span><span class="ba-now">Coupons strip, image, brand and price all visible</span></li>
+        <li><span class="ba-was">No price above the fold</span><span class="ba-now">Price, discount and MRP in a sticky bar</span></li>
+        <li><span class="ba-was">No rating in view</span><span class="ba-now">Rating and review count, tappable</span></li>
+        <li><span class="ba-was">"OFFERS" tag with no action</span><span class="ba-now">"12 coupons · 5 offers" that jumps to savings</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- STAR -->
+  <section class="wrap section" id="overview" aria-labelledby="star-title">
+    <p class="eyebrow">Overview</p>
+    <h2 id="star-title">The project in four lines</h2>
+    <ol class="star" role="list">
+      <li><span class="star-key" aria-hidden="true">S</span><div><h3>Situation</h3><p>The PDP on mobile web carries as much traffic as the app homepage, yet most shoppers left the first screen having seen only a product image. Brand, price, rating and offers were all below the fold, and the layout behaved differently across Safari on iOS and Chrome on Android.</p></div></li>
+      <li><span class="star-key" aria-hidden="true">T</span><div><h3>Task</h3><p>Bring brand, product name, price, discount, category and shade or size choices into the first fold on every device and browser, without losing the image-led browsing beauty shoppers rely on.</p></div></li>
+      <li><span class="star-key" aria-hidden="true">A</span><div><h3>Action</h3><p>Audited recordings and heatmaps, wrote six hypotheses, explored six rounds of options with review feedback between each, then shipped Phase 1 and Phase 2. Extended the work to Privé early-access pricing and a social proof A/B test on app and web.</p></div></li>
+      <li><span class="star-key" aria-hidden="true">R</span><div><h3>Result</h3><p>Every decision-making element now appears in the first fold, even on a 640&nbsp;px tall screen. Add-to-bag, offer engagement and scroll depth all improved (sample figures above), and pricing widgets became one system across all three platforms.</p></div></li>
+    </ol>
+  </section>
+
+  <!-- RESEARCH -->
+  <section class="wrap section" id="research" aria-labelledby="research-title">
+    <p class="eyebrow">Research</p>
+    <h2 id="research-title">What was the PDP actually doing?</h2>
+    <div class="objective">
+      <h3 class="h-label">Research objective</h3>
+      <p>Improve the visibility of important information in the first fold of the PDP, covering every device and browser our shoppers use: Safari and Chrome on iOS, Chrome and other browsers on Android.</p>
+    </div>
+
+    <ul class="method" role="list">
+      <li><b>Session recordings</b><span>Watched how shoppers moved through the PDP in MS Clarity and where they stopped.</span></li>
+      <li><b>Heatmaps and scroll maps</b><span>Mapped taps and the share of users reaching each section, including where the average fold sat.</span></li>
+      <li><b>Device and browser split</b><span>Broke traffic down by OS, browser and screen height to decide which layouts to design for.</span></li>
+      <li><b>Current-design audit</b><span>Annotated the live PDP on iOS Safari and Android Chrome against six must-have pieces of information.</span></li>
+    </ul>
+
+    <div class="band-head">
+      <h3 class="h-sub">Mweb traffic at a glance</h3>
+      <span class="chip chip-sample">Sample data</span>
+    </div>
+    <ul class="mini-stats" role="list">
+      <li><span>1.2M</span>monthly PDP visits</li>
+      <li><span>38s</span>active time per visit</li>
+      <li><span>52%</span>average scroll depth</li>
+      <li><span>79 / 21</span>Android / iOS sessions</li>
+    </ul>
+
+    <h3 class="h-sub">Two observations that shaped the work</h3>
+    <div class="notes">
+      <figure class="note-img"><button class="zoom" type="button" data-caption="Research note on product images"><img src="assets/img/note-images.png" alt="Research note: a lot of people tap into the large image view and struggle to get back" width="336" height="291" decoding="async"></button></figure>
+      <figure class="note-img"><button class="zoom" type="button" data-caption="Research note on ratings and reviews"><img src="assets/img/note-rnr.png" alt="Research note: users dive into ratings and reviews for social validation, so navigation to reviews must improve" width="336" height="411" decoding="async"></button></figure>
+    </div>
+  </section>
+
+  <!-- PAIN POINTS -->
+  <section class="wrap section" id="pain-points" aria-labelledby="pain-title">
+    <p class="eyebrow">User pain points</p>
+    <h2 id="pain-title">Six reasons shoppers didn't add to bag</h2>
+    <ol class="pains" role="list">
+      <li id="p1"><span class="pain-id">P1</span><div><b>Nothing useful in the first scroll</b><p>No brand, price or rating above the fold, so nothing drove an instant decision.</p></div></li>
+      <li id="p2"><span class="pain-id">P2</span><div><b>The image takes the whole screen</b><p>Most of the viewport went to one image, and shoppers who opened the large view struggled to get back.</p></div></li>
+      <li id="p3"><span class="pain-id">P3</span><div><b>Offers are hard to find</b><p>No way to explore coupons and offers from the top of the page, even though price drives the purchase.</p></div></li>
+      <li id="p4"><span class="pain-id">P4</span><div><b>Ratings are invisible</b><p>No rating or review signal in view, in a category where social validation decides the purchase.</p></div></li>
+      <li id="p5"><span class="pain-id">P5</span><div><b>Price and discount are buried</b><p>The most important purchase factor sat far below the image, with no discount or MRP context.</p></div></li>
+      <li id="p6"><span class="pain-id">P6</span><div><b>Browser chrome eats the fold</b><p>Safari's toolbar, Chrome's address bar and promo banners shrank the usable screen differently on each device.</p></div></li>
+    </ol>
+  </section>
+
+  <!-- HYPOTHESES -->
+  <section class="band band-tint" id="hypotheses" aria-labelledby="hyp-title">
+    <div class="wrap section-tight">
+      <p class="eyebrow">Hypotheses</p>
+      <h2 id="hyp-title">What I believed, and set out to test</h2>
+      <ol class="hyps" role="list">
+        <li><b>Shoppers arrive already knowing the product.</b> Most land from social campaigns, so recognising the image matters more than discovering it.</li>
+        <li><b>Beauty is recognised by image, then name.</b> Brand and product name can sit directly below the image without losing context.</li>
+        <li><b>Intent is either fixed or exploratory.</b> Give fixed-intent shoppers enough to buy in the first scroll, and explorers a path through breadcrumbs and View similar.</li>
+        <li><b>Price decides conversion.</b> Shoppers actively look for discounts, coupons and offers.</li>
+        <li><b>Shoppers want second opinions.</b> They check detailed reviews and buyer photos before buying.</li>
+        <li><b>Social proof builds trust.</b> Showing how many people recently added a product will lift add-to-bag, especially for new visitors.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- EXPLORATIONS -->
+  <section class="section" id="explorations" aria-labelledby="exp-title">
+    <div class="wrap">
+      <p class="eyebrow">Explorations</p>
+      <h2 id="exp-title">Six rounds, and why each one led to the next</h2>
+      <p class="sec-intro">Pick a round, then tap through its options. Each round ends with the feedback or trade-off that shaped the next one.</p>
+    </div>
+
+    <div class="rounds-nav-wrap">
+      <div class="rounds-nav" role="tablist" aria-label="Exploration rounds" id="rounds-nav">
+        <button role="tab" type="button" id="rt-1" aria-controls="rp-1" aria-selected="true" tabindex="0"><span>1</span>Directions</button>
+        <button role="tab" type="button" id="rt-2" aria-controls="rp-2" aria-selected="false" tabindex="-1"><span>2</span>After review</button>
+        <button role="tab" type="button" id="rt-3" aria-controls="rp-3" aria-selected="false" tabindex="-1"><span>3</span>Screen sizes</button>
+        <button role="tab" type="button" id="rt-4" aria-controls="rp-4" aria-selected="false" tabindex="-1"><span>4</span>Coupons</button>
+        <button role="tab" type="button" id="rt-5" aria-controls="rp-5" aria-selected="false" tabindex="-1"><span>5</span>Ratings</button>
+        <button role="tab" type="button" id="rt-6" aria-controls="rp-6" aria-selected="false" tabindex="-1"><span>6</span>Price CTA</button>
+      </div>
+    </div>
+
+    <!-- Round panels are generated from data in script.html into #rounds -->
+    <div class="wrap" id="rounds"></div>
+  </section>
+
+  <!-- FINAL DESIGN -->
+  <section class="band band-tint" id="final" aria-labelledby="final-title">
+    <div class="wrap section-tight">
+      <p class="eyebrow">Final design</p>
+      <h2 id="final-title">Every decision, pinned to the screen</h2>
+      <p>Tap a numbered pin, or a row in the list, to see what changed there and which pain point it solves.</p>
+
+      <div class="seg seg-sm" role="radiogroup" aria-label="Final design platform" id="hs-switch">
+        <button type="button" role="radio" aria-checked="true" data-hs="android">Android Chrome</button>
+        <button type="button" role="radio" aria-checked="false" data-hs="ios">iOS Safari</button>
+      </div>
+
+      <div class="hs-layout">
+        <div class="device android hs-device" id="hs-device">
+          <div class="screen" id="hs-screen">
+            <img id="hs-img" src="assets/img/final-phase2-android.png" alt="Final Phase 2 PDP on Android Chrome">
+            <div class="pins" id="hs-pins"></div>
+          </div>
+        </div>
+        <ol class="hs-list" id="hs-list" role="list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING FLOW -->
+  <section class="wrap section" id="pricing" aria-labelledby="flow-title">
+    <p class="eyebrow">Pricing system</p>
+    <h2 id="flow-title">One price on screen, the better one a tap away</h2>
+    <p>Best price, Privé early access, flash sales and price reveals each had their own banner. Step through the flow I designed for a Privé Gold member.</p>
+
+    <div class="flow">
+      <div class="device ios flow-device"><div class="screen"><img id="flow-img" src="assets/img/flow-0-mweb-get-it-for.png" alt=""></div></div>
+      <div class="flow-side">
+        <ol class="flow-steps" id="flow-steps" role="list"></ol>
+        <div class="flow-btns">
+          <button type="button" class="btn ghost" id="flow-prev">Previous</button>
+          <button type="button" class="btn" id="flow-next">Next step</button>
+        </div>
+      </div>
+    </div>
+
+    <details class="disclose">
+      <summary>See the widget rules for every pricing scenario</summary>
+      <figure class="wide">
+        <button class="zoom" type="button" data-caption="Pricing widget rules"><img src="assets/img/widget-matrix.png" alt="Matrix of pricing widgets for Privé Platinum, Privé Gold, Flash Sale, Price Reveal and Best Price, combined, separate, price only and no price" width="2000" height="1336" decoding="async" loading="lazy"></button>
+        <figcaption>When the differential banner has a price, it combines with best price in one widget. Without a price, the two stay separate. Tap to enlarge.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <!-- SOLUTIONS BY PLATFORM -->
+  <section class="section" id="solutions" aria-labelledby="sol-title">
+    <div class="wrap">
+      <p class="eyebrow">Solutions by platform</p>
+      <h2 id="sol-title">What shipped on each platform</h2>
+      <p class="sec-intro">Each platform had its own constraints, so the same ideas landed differently. Tags like <span class="tag">P3</span> point back to the pain point a change solves.</p>
+    </div>
+
+    <div class="seg-wrap">
+      <div class="seg" role="tablist" aria-label="Platform">
+        <button role="tab" id="tab-ios" aria-controls="panel-ios" aria-selected="true" tabindex="0" type="button">iOS</button>
+        <button role="tab" id="tab-android" aria-controls="panel-android" aria-selected="false" tabindex="-1" type="button">Android</button>
+        <button role="tab" id="tab-mweb" aria-controls="panel-mweb" aria-selected="false" tabindex="-1" type="button">Mweb</button>
+      </div>
+    </div>
+
+    <div class="panel wrap" role="tabpanel" id="panel-ios" aria-labelledby="tab-ios" tabindex="0">
+      <dl class="pstar">
+        <div><dt>Situation</dt><dd>iOS shoppers browse in Safari, whose bottom toolbar takes about 110&nbsp;pt, and in the Nykaa app. Both hid price and rating below the image.</dd></div>
+        <div><dt>Task</dt><dd>Fit decision-making information above Safari's toolbar, follow iOS patterns for sheets and keyboards, and carry savings and trust signals into the app.</dd></div>
+        <div><dt>Action</dt><dd>Moved the price bar above the toolbar, used bottom sheets for notify-me and best price, and added social proof and a Privé callout in the app.</dd></div>
+        <div><dt>Result</dt><dd><span class="chip chip-sample">Sample</span> +16% add-to-bag on iOS Safari and 2.6× taps on the coupon strip.</dd></div>
+      </dl>
+      <article class="sol">
+        <div class="sol-media"><div class="device ios sm"><div class="screen"><img src="assets/img/ios-large-t1.png" alt="iOS Safari PDP with price bar above the Safari toolbar" width="360" height="800" decoding="async"></div></div></div>
+        <div class="sol-text"><h3>Price bar that clears Safari's toolbar</h3><div class="tags"><span class="tag">P1</span><span class="tag">P5</span><span class="tag">P6</span></div><p>Price, discount, MRP and Add to Bag sit in a sticky bar directly above Safari's toolbar. Share moved into the header so it stays one row.</p><p class="why"><b>Trade-off:</b> the bar costs about 64&nbsp;pt of image height, accepted because price was the most-searched detail.</p></div>
+      </article>
+      <article class="sol">
+        <div class="sol-media"><div class="device ios sm"><div class="screen"><img src="assets/img/ios-notify-keyboard.png" alt="Get Notified sheet with the iOS keyboard open" width="360" height="800" decoding="async" loading="lazy"></div></div></div>
+        <div class="sol-text"><h3>Native sheets and keyboard</h3><div class="tags"><span class="tag">P2</span></div><p>Out-of-stock shoppers get a bottom sheet with one email field. With the keyboard open, the field and the action stay visible above it.</p><p class="why"><b>Why:</b> a full-page form would take shoppers away from the product they wanted.</p></div>
+      </article>
+      <article class="sol">
+        <div class="sol-media"><div class="device ios sm"><div class="screen"><img src="assets/img/ios-app-social-proof.png" alt="iOS app PDP with social proof strip" width="360" height="800" decoding="async"></div></div></div>
+        <div class="sol-text"><h3>Social proof on App PDP</h3><div class="tags"><span class="tag">P4</span></div><p>A soft gradient strip above Add to bag shows how many people added the product in the last 7 days.</p><p class="why"><b>Why:</b> next to the CTA, the proof appears at the moment of decision.</p></div>
+      </article>
+    </div>
+
+    <div class="panel wrap" role="tabpanel" id="panel-android" aria-labelledby="tab-android" tabindex="0" hidden>
+      <dl class="pstar">
+        <div><dt>Situation</dt><dd>About four in five web sessions come from Android, mostly Chrome with its top address bar and a bottom navigation bar, on a wide range of screen heights.</dd></div>
+        <div><dt>Task</dt><dd>Make the first fold hold up from 640&nbsp;px to tall screens, and keep app and web consistent for the same product.</dd></div>
+        <div><dt>Action</dt><dd>Shipped Phase 1 and 2 on Chrome, sized the image to the screen, added the sticky price CTA, and designed the Hybrid PDP card and cart price breakup.</dd></div>
+        <div><dt>Result</dt><dd><span class="chip chip-sample">Sample</span> +13% add-to-bag on Android and 18% more shoppers reaching reviews.</dd></div>
+      </dl>
+      <article class="sol">
+        <div class="sol-media scroller">
+          <div class="device android sm"><div class="screen scroll" tabindex="0" aria-label="Scrollable full PDP. Scroll inside the phone."><img src="assets/img/android-full-scroll.png" alt="Full-length PDP from header through shades, coupons, offers, details, ratings and reviews" width="360" height="2310" decoding="async" loading="lazy"></div></div>
+          <p class="scroll-hint" aria-hidden="true">Scroll inside the phone</p>
+        </div>
+        <div class="sol-text"><h3>The full page, reordered</h3><div class="tags"><span class="tag">P1</span><span class="tag">P3</span><span class="tag">P4</span></div><p>Shades, coupons and offers follow the product identity. Details, ratings and buyer photos come next, and the price bar stays pinned throughout.</p><p class="why"><b>Why:</b> fixed-intent shoppers get what they need early; explorers still reach reviews in one scroll.</p></div>
+      </article>
+      <article class="sol">
+        <div class="sol-media"><div class="device android sm"><div class="screen"><img src="assets/img/android-app-hybrid-social-proof.png" alt="Android app hybrid PDP card with social proof and Hot Pink Sale price" width="360" height="800" decoding="async" loading="lazy"></div></div></div>
+        <div class="sol-text"><h3>Hybrid PDP in the app</h3><div class="tags"><span class="tag">P3</span><span class="tag">P4</span></div><p>The Hybrid PDP card carries rating, price, size and social proof, with Collect Coupons and Offers as expandable rows.</p><p class="why"><b>Trade-off:</b> rows collapsed by default keep the card short, at the cost of one tap to see coupons.</p></div>
+      </article>
+      <article class="sol">
+        <div class="sol-media"><div class="device android sm"><div class="screen"><img src="assets/img/flow-5-price-breakup.png" alt="Product Price sheet with MRP, Privé Gold offer and You pay 4804" width="360" height="800" decoding="async" loading="lazy"></div></div></div>
+        <div class="sol-text"><h3>Price breakup in the bag</h3><div class="tags"><span class="tag">P5</span></div><p>An info icon opens a breakup that shows the early-access offer replacing the smaller MRP discount.</p><p class="why"><b>Why:</b> explaining the final price builds trust at checkout.</p></div>
+      </article>
+    </div>
+
+    <div class="panel wrap" role="tabpanel" id="panel-mweb" aria-labelledby="tab-mweb" tabindex="0" hidden>
+      <dl class="pstar">
+        <div><dt>Situation</dt><dd>Mweb runs in Safari and Chrome on iOS and Chrome and other browsers on Android, each with different chrome, and catches all campaign traffic.</dd></div>
+        <div><dt>Task</dt><dd>Design one PDP that adapts to every browser and screen height, with rules the web team can build once.</dd></div>
+        <div><dt>Action</dt><dd>Covered four browsers, defined adaptive image heights, chose the coupon strip, wrote pricing widget rules and ran the social proof test.</dd></div>
+        <div><dt>Result</dt><dd><span class="chip chip-sample">Sample</span> One layout across four browsers and +3.1% conversion in the social proof test group.</dd></div>
+      </dl>
+      <article class="sol">
+        <div class="sol-media duo"><div class="device ios sm"><div class="screen"><img src="assets/img/ios-coupon-opt1.png" alt="Mweb PDP in iOS Safari" width="360" height="800" decoding="async" loading="lazy"></div></div><div class="device android sm"><div class="screen"><img src="assets/img/android-coupon-opt1.png" alt="Mweb PDP in Android Chrome" width="360" height="800" decoding="async" loading="lazy"></div></div></div>
+        <div class="sol-text"><h3>One layout, four browsers</h3><div class="tags"><span class="tag">P6</span></div><p>The same PDP was checked in Safari iOS, Chrome iOS, Chrome Android and Samsung Internet, at large and small heights.</p><p class="why"><b>Why:</b> browser chrome differs by up to 300&nbsp;px, so a layout tuned to one browser breaks in another.</p></div>
+      </article>
+      <article class="sol">
+        <div class="sol-media"><div class="device android sm" id="sp-device"><div class="screen"><img id="sp-img" src="assets/img/android-mweb-social-proof.png" alt="Mweb PDP with social proof strip"></div></div></div>
+        <div class="sol-text"><h3>Social proof A/B test</h3><div class="tags"><span class="tag">P4</span></div><p>Traffic split into a control and variants by social proof type. The same strip was designed for every surface.</p>
+          <div class="seg seg-sm seg-left" role="radiogroup" aria-label="Social proof surface" id="sp-switch">
+            <button type="button" role="radio" aria-checked="true" data-sp="android-mweb-social-proof.png|android">Mweb PDP</button>
+            <button type="button" role="radio" aria-checked="false" data-sp="ios-mweb-hybrid-social-proof.png|android">Hybrid PDP</button>
+            <button type="button" role="radio" aria-checked="false" data-sp="ios-app-social-proof.png|ios">App PDP</button>
+          </div>
+          <p class="why"><b>Fail criterion, set up front:</b> no improvement in trust, cart additions, conversion or order value.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="wrap section" id="results" aria-labelledby="res-title">
+    <div class="band-head">
+      <div><p class="eyebrow">Results</p><h2 id="res-title">Before and after, by platform</h2></div>
+      <span class="chip chip-sample">Sample data</span>
+    </div>
+    <div class="bars" role="img" aria-label="Add-to-bag rate before and after. iOS 7.5% to 8.7%. Android 6.9% to 7.8%. Mweb 7.0% to 8.0%. Sample data.">
+      <div class="bar-row"><span class="bar-label">iOS</span><div class="bar-track"><span class="bar b-before" style="--v:62%"></span><span class="bar b-after" style="--v:72.5%"></span></div><span class="bar-val">7.5 → 8.7%</span></div>
+      <div class="bar-row"><span class="bar-label">Android</span><div class="bar-track"><span class="bar b-before" style="--v:57.5%"></span><span class="bar b-after" style="--v:65%"></span></div><span class="bar-val">6.9 → 7.8%</span></div>
+      <div class="bar-row"><span class="bar-label">Mweb</span><div class="bar-track"><span class="bar b-before" style="--v:58.3%"></span><span class="bar b-after" style="--v:66.7%"></span></div><span class="bar-val">7.0 → 8.0%</span></div>
+      <div class="bar-legend"><span><i class="lg lg-b"></i>Before</span><span><i class="lg lg-a"></i>After</span><span class="bar-cap">Add-to-bag rate</span></div>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Results table">
+      <table>
+        <caption class="sr-only">Sample results by platform</caption>
+        <thead><tr><th scope="col">Metric</th><th scope="col">iOS</th><th scope="col">Android</th><th scope="col">Mweb</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Add-to-bag rate</th><td>+16.0%</td><td>+13.1%</td><td>+14.2%</td></tr>
+          <tr><th scope="row">Coupon strip tap rate</th><td>6.4%</td><td>5.2%</td><td>5.8%</td></tr>
+          <tr><th scope="row">Reached reviews</th><td>+21%</td><td>+18%</td><td>+19%</td></tr>
+          <tr><th scope="row">Conversion (social proof)</th><td>+2.7%</td><td>+3.4%</td><td>+3.1%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">All figures are illustrative.</p>
+  </section>
+
+  <!-- LEARNINGS -->
+  <section class="band band-tint" id="learnings" aria-labelledby="learn-title">
+    <div class="wrap section-tight">
+      <p class="eyebrow">Learnings</p>
+      <h2 id="learn-title">What I'd keep doing</h2>
+      <ul class="learn" role="list">
+        <li><b>Design for the browser, not the frame.</b> A 360&nbsp;×&nbsp;800 artboard hides how much Safari and Chrome take away. Testing in real browser chrome changed the layout more than any review.</li>
+        <li><b>Write down the trade-off.</b> Pros and cons for each coupon option made the decision quick and kept coupons consistent across the app.</li>
+        <li><b>Rules beat screens.</b> The pricing matrix replaced dozens of one-off mocks and let three platforms ship the same behaviour.</li>
+        <li><b>Agree on failure first.</b> Writing the fail criterion before the social proof test kept the team honest about what counted as a win.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="wrap foot">
+    <p>Designed by Samikshya Satpathy. Screens are from the original Figma working file; brand assets belong to Nykaa.</p>
+    <a class="totop" href="#top">Back to top</a>
+  </footer>
+</main>
+
+<dialog id="lightbox" aria-label="Enlarged image">
+  <form method="dialog" class="lb-bar">
+    <p id="lb-cap"></p>
+    <button type="submit" class="lb-close" aria-label="Close">Close</button>
+  </form>
+  <div class="lb-body"><img id="lb-img" alt=""></div>
+</dialog>
+
+<script>
+(function(){
+  var IMG='assets/img/';
+  function $(s,r){return (r||document).querySelector(s)}
+  function $$(s,r){return [].slice.call((r||document).querySelectorAll(s))}
+  function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs||{})e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e}
+  function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+
+  /* ---------- Exploration rounds ---------- */
+  var ROUNDS=[
+    {title:'Phase 1 directions',intro:'Three ways to pull identity, rating and price into the first fold without losing the product image.',
+     options:[
+      {name:'A · Large image, chips below',img:'phase1-opt-a.png',p:'android',verdict:['kept','Kept parts'],detail:'Kept the big featured image, with View similar and Share as chips under it and the rating below the name. The chips and the grouped identity carried forward. The image still pushed price below the fold.'},
+      {name:'B · Rich hero image',img:'phase1-opt-b.png',p:'android',verdict:['dropped','Dropped'],detail:'Tried a lifestyle image with product claims printed on it. Dropped: the busy image competed with the text below it, and shade swatches slid under the CTA.'},
+      {name:'C · Wishlist beside View similar',img:'phase1-opt-c.png',p:'android',verdict:['chosen','Chosen base'],detail:'Moved Wishlist next to View similar and gave Add to Bag the full width. This became the base for the next round.'}],
+     feedback:{title:'Review feedback',items:['<b>Incorporate numbers</b>: show rating and review counts, not stars alone.','<b>Optimise the added info</b>: group brand, name and rating.','<b>"View all" intent is unclear</b>: label what it opens.','<b>Rethink the pink strip</b>: it reads as an ad.','<b>Explain every placement</b>: why View similar and Wishlist sit where they do, why Share moves, and coupon variants.']},
+     tradeoff:[['gain','Bigger image','Faster recognition for shoppers arriving from campaigns'],['cost','Bigger image','Less room for price and rating above the fold']]},
+    {title:'Proposal after review',intro:'Every review point became a change. Share moved into the header, a labelled coupon strip replaced the pink bar, View similar and Wishlist became icon buttons on the image, and a progress line replaced the dots.',
+     options:[
+      {name:'First fold',img:'proposed-v1-android.png',p:'android',verdict:['chosen','Chosen'],detail:'Coupon strip reads "12 coupons · 5 offers" with See all. Rating becomes one line with a star, score and review count that scrolls to reviews.'},
+      {name:'Full page (scroll inside)',img:'android-full-scroll.png',p:'android',scroll:true,verdict:['chosen','Chosen'],detail:'Below the fold: shades, collect coupons, offers, product details, ratings with buyer photos, and the most useful review. The price bar stays pinned.'}],
+     feedback:{title:'Design lead feedback',items:['<b>Simplify ratings further</b>: how can we show them more simply?','<b>Add a coupon entry point at the top</b> that leads to the coupons section below.','<b>Share placement is open</b>: check how many people use Share before finalising.']},
+     tradeoff:[['gain','Icons on the image','Saved a full row of height'],['cost','Icons on the image','Smaller targets, so they got 44 pt hit areas and a white backing']]},
+    {title:'Screen sizes',intro:'The visible fold changes by up to 300 px between a tall iPhone in Safari and a small Android in Chrome. I tested large layouts in two types and a 640 px small layout.',
+     options:[
+      {name:'Large, type 1',img:'explore-large-t1-a.png',p:'android',scroll:true,verdict:['chosen','Chosen for tall'],detail:'Brand and name above the image, with rating, shades and price all on one screen. Works on tall phones only.'},
+      {name:'Large, type 2',img:'explore-large-t2-a.png',p:'android',verdict:['dropped','Dropped'],detail:'Full-bleed image with brand below. On most phones the rating was cut off by the price bar.'},
+      {name:'Small, before',img:'explore-small-a.png',p:'android',small:true,verdict:['problem','Problem'],detail:'On a 640 px screen the price bar covers the image and no product identity is visible.'},
+      {name:'Small, optimised',img:'android-small-optimized.png',p:'android',small:true,verdict:['chosen','Chosen'],detail:'The image area shrinks with screen height so the brand name clears the price bar.'}],
+     feedback:{title:'Decision',items:['<b>Make the image area adjust to device height</b> instead of using one fixed size.','<b>Keep the campaign banner</b> on tall screens only; drop it first when space runs out.']},
+     tradeoff:[['gain','Adaptive image','Brand and price visible on every screen size'],['cost','Adaptive image','Smaller product image on small phones; engineering needs height breakpoints']]},
+    {title:'Coupons: strip or card?',intro:'The design lead asked for a coupon entry point at the top. I compared a one-line strip with a rich coupon card.',
+     options:[
+      {name:'Option 1 · Strip',img:'ios-coupon-opt1.png',p:'ios',verdict:['chosen','Chosen'],detail:'Shows how many coupons and offers exist in one line and jumps to the coupon section without breaking the flow. Leaves the image its share of attention.'},
+      {name:'Option 2 · Card',img:'ios-coupon-opt2.png',p:'ios',verdict:['dropped','Dropped'],detail:'Shows the best coupon up front with a Collect action. Dropped: it needs new coupon designs that would change coupons everywhere, takes more of the fold and splits coupons from offers.'}],
+     feedback:{title:'Why the strip won',items:['<b>Pros</b>: an "OFFERS" tag gave no way in; the strip shows the count and leads straight to savings.','<b>Pros</b>: small and interactive, so it adds delight without stealing attention.','<b>Cons we accepted</b>: still one tap or scroll to see the coupons themselves.']},
+     tradeoff:[['gain','Strip','Reuses existing coupons; keeps coupons and offers together'],['cost','Strip','Shoppers might tap it before exploring the product']]},
+    {title:'Ratings',intro:'"Make the ratings look more visible, concise, simple and interactive." Two treatments went into review.',
+     options:[
+      {name:'Five stars + chevron',img:'final-phase1-android.png',p:'android',verdict:['chosen','Shipped Phase 1'],detail:'Familiar five-star row with score, count and a chevron that auto-scrolls to Ratings & Reviews.'},
+      {name:'Single star + review count',img:'ios-ratings-explore.png',p:'ios',scroll:true,verdict:['kept','Explored next'],detail:'One pink star, the score and "74,318 reviews" in a single line. Shorter, and the count reads as social proof.'}],
+     feedback:{title:'What informed it',items:['<b>Recordings</b>: shoppers dug into reviews for social validation before buying.','<b>Review feedback</b>: "incorporate numbers", so the count is always shown.']},
+     tradeoff:[['gain','Single star','Shorter line and clearer count'],['cost','Single star','Loses the at-a-glance shape of a five-star rating']]},
+    {title:'Phase 1 → Phase 2 price CTA',intro:'Phase 1 put price under the name and a full-width Add to Bag at the bottom. Phase 2 merged price into a sticky CTA bar.',
+     options:[
+      {name:'Phase 1 · Price inline',img:'final-phase1-android.png',p:'android',verdict:['kept','Shipped first'],detail:'Price, discount and taxes sit under the rating. The CTA is full width with a Wishlist icon beside it.'},
+      {name:'Phase 2 · Sticky price CTA',img:'final-phase2-android.png',p:'android',verdict:['chosen','Shipped'],detail:'Selling price, a mint discount tag and slashed MRP stay in the bottom bar next to Add to Bag, freeing room for shades in the first fold.'},
+      {name:'Phase 2 · After adding',img:'uc-go-to-bag.png',p:'android',verdict:['chosen','State'],detail:'Once added, the CTA becomes Go to Bag and the bag icon shows a count.'}],
+     feedback:{title:'What made Phase 2 possible',items:['<b>CTA got a white background</b> and the Wishlist icon moved to the image, making room for price in the bar.','<b>Mint means savings</b> everywhere, so discount and offers read as one idea.']},
+     tradeoff:[['gain','Sticky price','Price is visible at every scroll position'],['cost','Sticky price','A taller bar; Wishlist moved off the CTA']]}
+  ];
+  var roundsEl=$('#rounds');
+  ROUNDS.forEach(function(r,i){
+    var n=i+1;
+    var p=el('div',{class:'round',role:'tabpanel',id:'rp-'+n,'aria-labelledby':'rt-'+n,tabindex:'0'});
+    if(i)p.hidden=true;
+    var o0=r.options[0];
+    p.innerHTML=
+      '<div class="round-head"><p class="eyebrow">Round '+n+' of '+ROUNDS.length+'</p><h3>'+r.title+'</h3><p>'+r.intro+'</p></div>'+
+      '<div class="round-body">'+
+        '<div class="round-dev"><div class="device '+o0.p+'"><div class="screen'+(o0.scroll?' scroll':'')+'" tabindex="'+(o0.scroll?0:-1)+'"><img src="'+IMG+o0.img+'" alt=""></div></div></div>'+
+        '<div class="round-side"><ul class="opt-list" role="list">'+
+          r.options.map(function(o,j){return '<li><button type="button" class="opt" aria-pressed="'+(j===0)+'" data-j="'+j+'"><span class="opt-name">'+o.name+'</span><span class="verdict v-'+o.verdict[0]+'">'+o.verdict[1]+'</span><span class="opt-detail">'+o.detail+'</span></button></li>'}).join('')+
+        '</ul></div>'+
+      '</div>'+
+      '<div class="cards">'+
+        '<div class="card card-fb"><h4>'+r.feedback.title+'</h4><ul>'+r.feedback.items.map(function(t){return '<li>'+t+'</li>'}).join('')+'</ul></div>'+
+        '<div class="card card-to"><h4>Trade-off</h4>'+r.tradeoff.map(function(t){return '<div class="to-row"><b class="to-'+t[0]+'">'+(t[0]==='gain'?'Gain':'Cost')+'</b><span>'+t[2]+'</span></div>'}).join('')+'</div>'+
+      '</div>'+
+      '<div class="round-next">'+
+        '<button type="button" class="btn ghost" data-go="'+(n-1)+'"'+(n===1?' disabled':'')+'>Previous round</button>'+
+        (n<ROUNDS.length?'<button type="button" class="btn" data-go="'+(n+1)+'">Next: '+ROUNDS[n].title+'</button>':'<a class="btn" href="#final">See the final design</a>')+
+      '</div>';
+    roundsEl.appendChild(p);
+    var dev=$('.device',p),scr=$('.screen',p),img=$('.screen img',p);
+    function setOpt(j){
+      var o=r.options[j];
+      $$('.opt',p).forEach(function(b,k){b.setAttribute('aria-pressed',k===j)});
+      dev.className='device '+o.p;
+      scr.className='screen'+(o.scroll?' scroll':'');scr.tabIndex=o.scroll?0:-1;scr.scrollTop=0;
+      if(o.scroll)scr.setAttribute('aria-label','Scrollable screen');else scr.removeAttribute('aria-label');
+      scr.style.aspectRatio=o.small?'360/640':'';
+      img.src=IMG+o.img;img.alt=r.title+': '+o.name+'. '+o.detail;
+    }
+    setOpt(0);
+    $$('.opt',p).forEach(function(b){b.addEventListener('click',function(){setOpt(+b.dataset.j)})});
+  });
+  var rTabs=$$('#rounds-nav [role="tab"]');
+  function selRound(n,focus){
+    rTabs.forEach(function(t,k){var on=k===n-1;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;$('#rp-'+(k+1)).hidden=!on;if(on){t.scrollIntoView({block:'nearest',inline:'nearest'});if(focus)t.focus();}});
+  }
+  rTabs.forEach(function(t,i){
+    t.addEventListener('click',function(){selRound(i+1)});
+    t.addEventListener('keydown',function(e){var k=null;if(e.key==='ArrowRight')k=(i+1)%rTabs.length;if(e.key==='ArrowLeft')k=(i-1+rTabs.length)%rTabs.length;if(k!==null){e.preventDefault();selRound(k+1,true)}});
+  });
+  roundsEl.addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(!b)return;selRound(+b.dataset.go);$('#explorations').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
+
+  /* ---------- Before / after slider ---------- */
+  var BA={ios:{d:'ios',b:'before-ios-safari-360.png',a:'ios-large-t1.png'},android:{d:'android',b:'before-android-chrome.png',a:'final-phase2-android.png'}};
+  var ba=$('#ba'),range=$('#ba-range');
+  function setPos(v){v=Math.max(0,Math.min(100,v));ba.style.setProperty('--pos',v+'%');range.value=Math.round(v);range.setAttribute('aria-valuetext',Math.round(v)+'% after');
+    $('.ba-tag-b',ba).style.opacity=v<12?0:1;$('.ba-tag-a',ba).style.opacity=v>88?0:1;}
+  range.addEventListener('input',function(){setPos(+range.value)});
+  var dragging=false;
+  function fromEvent(e){var r=ba.getBoundingClientRect();setPos((e.clientX-r.left)/r.width*100)}
+  ba.addEventListener('pointerdown',function(e){dragging=true;ba.setPointerCapture(e.pointerId);fromEvent(e)});
+  ba.addEventListener('pointermove',function(e){if(dragging)fromEvent(e)});
+  ba.addEventListener('pointerup',function(){dragging=false});
+  ba.addEventListener('pointercancel',function(){dragging=false});
+  $$('[data-ba]').forEach(function(b){b.addEventListener('click',function(){
+    var c=BA[b.dataset.ba];$$('[data-ba]').forEach(function(x){x.setAttribute('aria-checked',x===b)});
+    $('#ba-device').className='device '+c.d+' ba-device';$('#ba-before').src=IMG+c.b;$('#ba-after').src=IMG+c.a;setPos(50);
+  })});
+  setPos(50);
+
+  /* ---------- Final design pins ---------- */
+  var HS={
+    android:{img:'final-phase2-android.png',alt:'Final Phase 2 PDP on Android Chrome',pins:[
+      [50,26.3,'Coupons & offers strip','An interactive strip shows that savings exist and opens the coupon section.','P3'],
+      [40,45,'Compact image carousel','Image area and scroll were tightened to save space and make swiping easier.','P2'],
+      [81,64,'View similar & Wishlist','Moved onto the image row so they no longer take a row of their own.','P2'],
+      [91,68.8,'Share','Kept as an icon beside the brand until usage data decides its final place.',''],
+      [33,72,'Brand, name and rating together','Grouped to keep the information hierarchy; the chevron jumps to reviews.','P1 P4'],
+      [78,90.6,'Sticky price CTA','Selling price, discount and slashed MRP stay beside Add to Bag at every scroll position.','P5']]},
+    ios:{img:'ios-large-t1.png',alt:'Final PDP in iOS Safari',pins:[
+      [63,7.8,'Share in the header','Moved up so the header stays a single row and frees a line below.',''],
+      [50,30.2,'Coupons & offers strip','"12 coupons · 5 offers" with See all, on a subtle ground instead of a pink bar.','P3'],
+      [35,51,'Image sized to the screen','Shorter on Safari so brand and price clear the toolbar.','P2 P6'],
+      [90,63,'View similar & Wishlist','Icon buttons on the image with 44 pt hit areas.','P2'],
+      [30,73.4,'Brand above the price bar','Product identity stays visible in the first fold.','P1'],
+      [78,80,'Price bar above Safari’s toolbar','Price, discount, MRP and Add to Bag sit just above the bottom toolbar so they never collide.','P5 P6']]}
+  };
+  var hsCur='android';
+  function renderHS(key){
+    hsCur=key;var c=HS[key];
+    $('#hs-device').className='device '+key+' hs-device';
+    $('#hs-img').src=IMG+c.img;$('#hs-img').alt=c.alt;
+    var pins=$('#hs-pins'),list=$('#hs-list');pins.innerHTML='';list.innerHTML='';
+    c.pins.forEach(function(p,i){
+      var pin=el('button',{type:'button',class:'pin','aria-pressed':'false','aria-label':(i+1)+'. '+p[2],style:'--x:'+p[0]+'%;--y:'+p[1]+'%','data-i':i},String(i+1));
+      pins.appendChild(pin);
+      var tags=p[4]?'<span class="tags">'+p[4].split(' ').map(function(t){return '<span class="tag">'+t+'</span>'}).join('')+'</span>':'';
+      var li=el('li');li.appendChild(el('button',{type:'button',class:'hs-item','aria-pressed':'false','data-i':i},'<span class="hs-n">'+(i+1)+'</span><span class="hs-t">'+p[2]+'</span><span class="hs-d"><span>'+p[3]+'</span>'+tags+'</span>'));
+      list.appendChild(li);
+    });
+    pickHS(0);
+  }
+  function pickHS(i){$$('#hs-pins .pin,#hs-list .hs-item').forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.i===i)})}
+  document.addEventListener('click',function(e){var b=e.target.closest('#hs-pins .pin,#hs-list .hs-item');if(b)pickHS(+b.dataset.i)});
+  $$('[data-hs]').forEach(function(b){b.addEventListener('click',function(){$$('[data-hs]').forEach(function(x){x.setAttribute('aria-checked',x===b)});renderHS(b.dataset.hs)})});
+  renderHS('android');
+
+  /* ---------- Pricing flow ---------- */
+  var FLOW=[
+    ['flow-0-mweb-get-it-for.png','android','Best price on the PDP','"Get it for ₹1,100" sits under the product name with a Know how link, so the lowest price is visible without crowding the main price.'],
+    ['flow-1-prive-callout.png','ios','Privé early-access callout','Privé Gold members see their exclusive early-access price under the main price.'],
+    ['flow-2-taxes-animate.png','ios','Callout animates to taxes','After a moment the line animates to "Inclusive of all taxes & discounts", so one line never shows two messages.'],
+    ['flow-3-best-price-sheet.png','ios','Best price sheet','Tapping the banner opens a sheet with coupons to collect and offers that apply automatically.'],
+    ['flow-4-bag.png','android','Final price in the bag','"You pay" shows the final price including early access and offers, so nothing changes at checkout.'],
+    ['flow-5-price-breakup.png','android','Price breakup','The info icon opens a breakup. The MRP discount is struck because the early-access offer is the better deal.']
+  ];
+  var fi=0,steps=$('#flow-steps');
+  FLOW.forEach(function(f,i){var li=el('li');li.appendChild(el('button',{type:'button',class:'fs','data-i':i},'<span class="fs-n">'+(i+1)+'</span><span class="fs-t">'+f[2]+'</span><span class="fs-d">'+f[3]+'</span>'));steps.appendChild(li)});
+  function setFlow(i){fi=Math.max(0,Math.min(FLOW.length-1,i));var f=FLOW[fi];
+    $('.flow-device').className='device '+f[1]+' flow-device';$('#flow-img').src=IMG+f[0];$('#flow-img').alt='Step '+(fi+1)+': '+f[2]+'. '+f[3];
+    $$('.fs',steps).forEach(function(b,k){if(k===fi)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
+    $('#flow-prev').disabled=fi===0;$('#flow-next').textContent=fi===FLOW.length-1?'Start again':'Next step';}
+  steps.addEventListener('click',function(e){var b=e.target.closest('.fs');if(b)setFlow(+b.dataset.i)});
+  $('#flow-prev').addEventListener('click',function(){setFlow(fi-1)});
+  $('#flow-next').addEventListener('click',function(){setFlow(fi===FLOW.length-1?0:fi+1)});
+  setFlow(0);
+
+  /* ---------- Social proof surface switch ---------- */
+  $$('[data-sp]').forEach(function(b){b.addEventListener('click',function(){
+    var v=b.dataset.sp.split('|');$$('[data-sp]').forEach(function(x){x.setAttribute('aria-checked',x===b)});
+    $('#sp-device').className='device '+v[1]+' sm';$('#sp-img').src=IMG+v[0];$('#sp-img').alt=b.textContent+' with social proof strip';
+  })});
+
+  /* ---------- Radio-style segmented controls: arrow keys ---------- */
+  $$('[role="radiogroup"]').forEach(function(g){var bs=$$('[role="radio"]',g);bs.forEach(function(b,i){b.tabIndex=b.getAttribute('aria-checked')==='true'?0:-1;
+    b.addEventListener('keydown',function(e){var k=null;if(e.key==='ArrowRight'||e.key==='ArrowDown')k=(i+1)%bs.length;if(e.key==='ArrowLeft'||e.key==='ArrowUp')k=(i-1+bs.length)%bs.length;if(k!==null){e.preventDefault();bs[k].click();bs[k].focus()}});
+    b.addEventListener('click',function(){bs.forEach(function(x){x.tabIndex=x===b?0:-1})});
+  })});
+
+  /* ---------- Platform tabs (#ios #android #mweb) ---------- */
+  var tabs=$$('.seg[role="tablist"] [role="tab"]');
+  function select(id,focus){
+    tabs.forEach(function(t){var on=t.id==='tab-'+id;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;$('#'+t.getAttribute('aria-controls')).hidden=!on;if(on&&focus)t.focus()});
+    store('pdp-tab',id);
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){select(t.id.slice(4))});
+    t.addEventListener('keydown',function(e){var n=null;if(e.key==='ArrowRight')n=(i+1)%tabs.length;if(e.key==='ArrowLeft')n=(i-1+tabs.length)%tabs.length;if(e.key==='Home')n=0;if(e.key==='End')n=tabs.length-1;if(n!==null){e.preventDefault();select(tabs[n].id.slice(4),true)}});
+  });
+  var saved=store('pdp-tab');if(saved&&['ios','android','mweb'].indexOf(saved)>-1)select(saved);
+  function fromHash(){var h=(location.hash||'').slice(1);if(['ios','android','mweb'].indexOf(h)>-1){select(h);$('#solutions').scrollIntoView()}}
+  fromHash();window.addEventListener('hashchange',fromHash);
+
+  /* ---------- Reading progress + bar animation ---------- */
+  var bar=$('#progress-bar');
+  function prog(){var d=document.documentElement,max=d.scrollHeight-d.clientHeight;bar.style.width=(max>0?Math.min(100,d.scrollTop/max*100):0)+'%'}
+  window.addEventListener('scroll',prog,{passive:true});prog();
+  var bars=$('.bars');
+  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){bars.classList.add('in');io.disconnect()}})},{threshold:.4});io.observe(bars)}
+
+  /* ---------- Lightbox ---------- */
+  var dlg=$('#lightbox'),lbImg=$('#lb-img'),lbCap=$('#lb-cap'),last=null;
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.zoom');if(!b)return;var img=b.querySelector('img');last=b;
+    lbImg.src=img.currentSrc||img.src;lbImg.alt=img.alt;lbImg.className=(img.naturalWidth&&img.naturalWidth<=400)?'phone':'';
+    lbCap.textContent=b.getAttribute('data-caption')||img.alt;
+    if(dlg.showModal)dlg.showModal();
+  });
+  dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close()});
+  dlg.addEventListener('close',function(){if(last)last.focus()});
+})();
+</script>
+</body>
+</html>
