@@ -6,7 +6,7 @@
 
 Samikshya Satpathy · Product Designer
 
-### [▶ View the interactive case study]([PDP Redesign PRoject for Nykaa](https://ecommpdp-case-study.vercel.app/)
+### ▶ View the interactive case study -(PDP Redesign PRoject for Nykaa](https://ecommpdp-case-study.vercel.app/)
 
 ![Final design on iOS, Android and the app](docs/cover.png)
 
