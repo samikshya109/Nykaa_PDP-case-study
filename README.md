@@ -6,9 +6,7 @@
 
 Samikshya Satpathy · Product Designer
 
-### ▶ View the interactive case study -(PDP Redesign PRoject for Nykaa](https://ecommpdp-case-study.vercel.app/)
-
-![Final design on iOS, Android and the app](docs/cover.png)
+### ▶ View the interactive case study - (https://ecommpdp-case-study.vercel.app/)
 
 </div>
 
@@ -89,7 +87,7 @@ Session recordings, heatmaps and an audit of the live page showed six pain point
 - **Pricing walkthrough** from product page to checkout
 - **iOS, Android and mobile web** solutions side by side
 
-### [▶ View the interactive case study]([https://YOUR-PROJECT.vercel.app](https://ecommpdp-case-study.vercel.app/)
+### ### ▶ View the interactive case study - (https://ecommpdp-case-study.vercel.app/)
 
 <sub>Best viewed on a phone.</sub>
 
