@@ -1,0 +1,217 @@
+<script>
+(function(){
+  var IMG='assets/img/';
+  function $(s,r){return (r||document).querySelector(s)}
+  function $$(s,r){return [].slice.call((r||document).querySelectorAll(s))}
+  function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs||{})e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e}
+  function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+
+  /* ---------- Exploration rounds ---------- */
+  var ROUNDS=[
+    {title:'Phase 1 directions',intro:'Three ways to pull identity, rating and price into the first fold without losing the product image.',
+     options:[
+      {name:'A · Large image, chips below',img:'phase1-opt-a.png',p:'android',verdict:['kept','Kept parts'],detail:'Kept the big featured image, with View similar and Share as chips under it and the rating below the name. The chips and the grouped identity carried forward. The image still pushed price below the fold.'},
+      {name:'B · Rich hero image',img:'phase1-opt-b.png',p:'android',verdict:['dropped','Dropped'],detail:'Tried a lifestyle image with product claims printed on it. Dropped: the busy image competed with the text below it, and shade swatches slid under the CTA.'},
+      {name:'C · Wishlist beside View similar',img:'phase1-opt-c.png',p:'android',verdict:['chosen','Chosen base'],detail:'Moved Wishlist next to View similar and gave Add to Bag the full width. This became the base for the next round.'}],
+     feedback:{title:'Review feedback',items:['<b>Incorporate numbers</b>: show rating and review counts, not stars alone.','<b>Optimise the added info</b>: group brand, name and rating.','<b>"View all" intent is unclear</b>: label what it opens.','<b>Rethink the pink strip</b>: it reads as an ad.','<b>Explain every placement</b>: why View similar and Wishlist sit where they do, why Share moves, and coupon variants.']},
+     tradeoff:[['gain','Bigger image','Faster recognition for shoppers arriving from campaigns'],['cost','Bigger image','Less room for price and rating above the fold']]},
+    {title:'Proposal after review',intro:'Every review point became a change. Share moved into the header, a labelled coupon strip replaced the pink bar, View similar and Wishlist became icon buttons on the image, and a progress line replaced the dots.',
+     options:[
+      {name:'First fold',img:'proposed-v1-android.png',p:'android',verdict:['chosen','Chosen'],detail:'Coupon strip reads "12 coupons · 5 offers" with See all. Rating becomes one line with a star, score and review count that scrolls to reviews.'},
+      {name:'Full page (scroll inside)',img:'android-full-scroll.png',p:'android',scroll:true,verdict:['chosen','Chosen'],detail:'Below the fold: shades, collect coupons, offers, product details, ratings with buyer photos, and the most useful review. The price bar stays pinned.'}],
+     feedback:{title:'Design lead feedback',items:['<b>Simplify ratings further</b>: how can we show them more simply?','<b>Add a coupon entry point at the top</b> that leads to the coupons section below.','<b>Share placement is open</b>: check how many people use Share before finalising.']},
+     tradeoff:[['gain','Icons on the image','Saved a full row of height'],['cost','Icons on the image','Smaller targets, so they got 44 pt hit areas and a white backing']]},
+    {title:'Screen sizes',intro:'The visible fold changes by up to 300 px between a tall iPhone in Safari and a small Android in Chrome. I tested large layouts in two types and a 640 px small layout.',
+     options:[
+      {name:'Large, type 1',img:'explore-large-t1-a.png',p:'android',scroll:true,verdict:['chosen','Chosen for tall'],detail:'Brand and name above the image, with rating, shades and price all on one screen. Works on tall phones only.'},
+      {name:'Large, type 2',img:'explore-large-t2-a.png',p:'android',verdict:['dropped','Dropped'],detail:'Full-bleed image with brand below. On most phones the rating was cut off by the price bar.'},
+      {name:'Small, before',img:'explore-small-a.png',p:'android',small:true,verdict:['problem','Problem'],detail:'On a 640 px screen the price bar covers the image and no product identity is visible.'},
+      {name:'Small, optimised',img:'android-small-optimized.png',p:'android',small:true,verdict:['chosen','Chosen'],detail:'The image area shrinks with screen height so the brand name clears the price bar.'}],
+     feedback:{title:'Decision',items:['<b>Make the image area adjust to device height</b> instead of using one fixed size.','<b>Keep the campaign banner</b> on tall screens only; drop it first when space runs out.']},
+     tradeoff:[['gain','Adaptive image','Brand and price visible on every screen size'],['cost','Adaptive image','Smaller product image on small phones; engineering needs height breakpoints']]},
+    {title:'Coupons: strip or card?',intro:'The design lead asked for a coupon entry point at the top. I compared a one-line strip with a rich coupon card.',
+     options:[
+      {name:'Option 1 · Strip',img:'ios-coupon-opt1.png',p:'ios',verdict:['chosen','Chosen'],detail:'Shows how many coupons and offers exist in one line and jumps to the coupon section without breaking the flow. Leaves the image its share of attention.'},
+      {name:'Option 2 · Card',img:'ios-coupon-opt2.png',p:'ios',verdict:['dropped','Dropped'],detail:'Shows the best coupon up front with a Collect action. Dropped: it needs new coupon designs that would change coupons everywhere, takes more of the fold and splits coupons from offers.'}],
+     feedback:{title:'Why the strip won',items:['<b>Pros</b>: an "OFFERS" tag gave no way in; the strip shows the count and leads straight to savings.','<b>Pros</b>: small and interactive, so it adds delight without stealing attention.','<b>Cons we accepted</b>: still one tap or scroll to see the coupons themselves.']},
+     tradeoff:[['gain','Strip','Reuses existing coupons; keeps coupons and offers together'],['cost','Strip','Shoppers might tap it before exploring the product']]},
+    {title:'Ratings',intro:'"Make the ratings look more visible, concise, simple and interactive." Two treatments went into review.',
+     options:[
+      {name:'Five stars + chevron',img:'final-phase1-android.png',p:'android',verdict:['chosen','Shipped Phase 1'],detail:'Familiar five-star row with score, count and a chevron that auto-scrolls to Ratings & Reviews.'},
+      {name:'Single star + review count',img:'ios-ratings-explore.png',p:'ios',scroll:true,verdict:['kept','Explored next'],detail:'One pink star, the score and "74,318 reviews" in a single line. Shorter, and the count reads as social proof.'}],
+     feedback:{title:'What informed it',items:['<b>Recordings</b>: shoppers dug into reviews for social validation before buying.','<b>Review feedback</b>: "incorporate numbers", so the count is always shown.']},
+     tradeoff:[['gain','Single star','Shorter line and clearer count'],['cost','Single star','Loses the at-a-glance shape of a five-star rating']]},
+    {title:'Phase 1 → Phase 2 price CTA',intro:'Phase 1 put price under the name and a full-width Add to Bag at the bottom. Phase 2 merged price into a sticky CTA bar.',
+     options:[
+      {name:'Phase 1 · Price inline',img:'final-phase1-android.png',p:'android',verdict:['kept','Shipped first'],detail:'Price, discount and taxes sit under the rating. The CTA is full width with a Wishlist icon beside it.'},
+      {name:'Phase 2 · Sticky price CTA',img:'final-phase2-android.png',p:'android',verdict:['chosen','Shipped'],detail:'Selling price, a mint discount tag and slashed MRP stay in the bottom bar next to Add to Bag, freeing room for shades in the first fold.'},
+      {name:'Phase 2 · After adding',img:'uc-go-to-bag.png',p:'android',verdict:['chosen','State'],detail:'Once added, the CTA becomes Go to Bag and the bag icon shows a count.'}],
+     feedback:{title:'What made Phase 2 possible',items:['<b>CTA got a white background</b> and the Wishlist icon moved to the image, making room for price in the bar.','<b>Mint means savings</b> everywhere, so discount and offers read as one idea.']},
+     tradeoff:[['gain','Sticky price','Price is visible at every scroll position'],['cost','Sticky price','A taller bar; Wishlist moved off the CTA']]}
+  ];
+  var roundsEl=$('#rounds');
+  ROUNDS.forEach(function(r,i){
+    var n=i+1;
+    var p=el('div',{class:'round',role:'tabpanel',id:'rp-'+n,'aria-labelledby':'rt-'+n,tabindex:'0'});
+    if(i)p.hidden=true;
+    var o0=r.options[0];
+    p.innerHTML=
+      '<div class="round-head"><p class="eyebrow">Round '+n+' of '+ROUNDS.length+'</p><h3>'+r.title+'</h3><p>'+r.intro+'</p></div>'+
+      '<div class="round-body">'+
+        '<div class="round-dev"><div class="device '+o0.p+'"><div class="screen'+(o0.scroll?' scroll':'')+'" tabindex="'+(o0.scroll?0:-1)+'"><img src="'+IMG+o0.img+'" alt=""></div></div></div>'+
+        '<div class="round-side"><ul class="opt-list" role="list">'+
+          r.options.map(function(o,j){return '<li><button type="button" class="opt" aria-pressed="'+(j===0)+'" data-j="'+j+'"><span class="opt-name">'+o.name+'</span><span class="verdict v-'+o.verdict[0]+'">'+o.verdict[1]+'</span><span class="opt-detail">'+o.detail+'</span></button></li>'}).join('')+
+        '</ul></div>'+
+      '</div>'+
+      '<div class="cards">'+
+        '<div class="card card-fb"><h4>'+r.feedback.title+'</h4><ul>'+r.feedback.items.map(function(t){return '<li>'+t+'</li>'}).join('')+'</ul></div>'+
+        '<div class="card card-to"><h4>Trade-off</h4>'+r.tradeoff.map(function(t){return '<div class="to-row"><b class="to-'+t[0]+'">'+(t[0]==='gain'?'Gain':'Cost')+'</b><span>'+t[2]+'</span></div>'}).join('')+'</div>'+
+      '</div>'+
+      '<div class="round-next">'+
+        '<button type="button" class="btn ghost" data-go="'+(n-1)+'"'+(n===1?' disabled':'')+'>Previous round</button>'+
+        (n<ROUNDS.length?'<button type="button" class="btn" data-go="'+(n+1)+'">Next: '+ROUNDS[n].title+'</button>':'<a class="btn" href="#final">See the final design</a>')+
+      '</div>';
+    roundsEl.appendChild(p);
+    var dev=$('.device',p),scr=$('.screen',p),img=$('.screen img',p);
+    function setOpt(j){
+      var o=r.options[j];
+      $$('.opt',p).forEach(function(b,k){b.setAttribute('aria-pressed',k===j)});
+      dev.className='device '+o.p;
+      scr.className='screen'+(o.scroll?' scroll':'');scr.tabIndex=o.scroll?0:-1;scr.scrollTop=0;
+      if(o.scroll)scr.setAttribute('aria-label','Scrollable screen');else scr.removeAttribute('aria-label');
+      scr.style.aspectRatio=o.small?'360/640':'';
+      img.src=IMG+o.img;img.alt=r.title+': '+o.name+'. '+o.detail;
+    }
+    setOpt(0);
+    $$('.opt',p).forEach(function(b){b.addEventListener('click',function(){setOpt(+b.dataset.j)})});
+  });
+  var rTabs=$$('#rounds-nav [role="tab"]');
+  function selRound(n,focus){
+    rTabs.forEach(function(t,k){var on=k===n-1;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;$('#rp-'+(k+1)).hidden=!on;if(on){t.scrollIntoView({block:'nearest',inline:'nearest'});if(focus)t.focus();}});
+  }
+  rTabs.forEach(function(t,i){
+    t.addEventListener('click',function(){selRound(i+1)});
+    t.addEventListener('keydown',function(e){var k=null;if(e.key==='ArrowRight')k=(i+1)%rTabs.length;if(e.key==='ArrowLeft')k=(i-1+rTabs.length)%rTabs.length;if(k!==null){e.preventDefault();selRound(k+1,true)}});
+  });
+  roundsEl.addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(!b)return;selRound(+b.dataset.go);$('#explorations').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
+
+  /* ---------- Before / after slider ---------- */
+  var BA={ios:{d:'ios',b:'before-ios-safari-360.png',a:'ios-large-t1.png'},android:{d:'android',b:'before-android-chrome.png',a:'final-phase2-android.png'}};
+  var ba=$('#ba'),range=$('#ba-range');
+  function setPos(v){v=Math.max(0,Math.min(100,v));ba.style.setProperty('--pos',v+'%');range.value=Math.round(v);range.setAttribute('aria-valuetext',Math.round(v)+'% after');
+    $('.ba-tag-b',ba).style.opacity=v<12?0:1;$('.ba-tag-a',ba).style.opacity=v>88?0:1;}
+  range.addEventListener('input',function(){setPos(+range.value)});
+  var dragging=false;
+  function fromEvent(e){var r=ba.getBoundingClientRect();setPos((e.clientX-r.left)/r.width*100)}
+  ba.addEventListener('pointerdown',function(e){dragging=true;ba.setPointerCapture(e.pointerId);fromEvent(e)});
+  ba.addEventListener('pointermove',function(e){if(dragging)fromEvent(e)});
+  ba.addEventListener('pointerup',function(){dragging=false});
+  ba.addEventListener('pointercancel',function(){dragging=false});
+  $$('[data-ba]').forEach(function(b){b.addEventListener('click',function(){
+    var c=BA[b.dataset.ba];$$('[data-ba]').forEach(function(x){x.setAttribute('aria-checked',x===b)});
+    $('#ba-device').className='device '+c.d+' ba-device';$('#ba-before').src=IMG+c.b;$('#ba-after').src=IMG+c.a;setPos(50);
+  })});
+  setPos(50);
+
+  /* ---------- Final design pins ---------- */
+  var HS={
+    android:{img:'final-phase2-android.png',alt:'Final Phase 2 PDP on Android Chrome',pins:[
+      [50,26.3,'Coupons & offers strip','An interactive strip shows that savings exist and opens the coupon section.','P3'],
+      [40,45,'Compact image carousel','Image area and scroll were tightened to save space and make swiping easier.','P2'],
+      [81,64,'View similar & Wishlist','Moved onto the image row so they no longer take a row of their own.','P2'],
+      [91,68.8,'Share','Kept as an icon beside the brand until usage data decides its final place.',''],
+      [33,72,'Brand, name and rating together','Grouped to keep the information hierarchy; the chevron jumps to reviews.','P1 P4'],
+      [78,90.6,'Sticky price CTA','Selling price, discount and slashed MRP stay beside Add to Bag at every scroll position.','P5']]},
+    ios:{img:'ios-large-t1.png',alt:'Final PDP in iOS Safari',pins:[
+      [63,7.8,'Share in the header','Moved up so the header stays a single row and frees a line below.',''],
+      [50,30.2,'Coupons & offers strip','"12 coupons · 5 offers" with See all, on a subtle ground instead of a pink bar.','P3'],
+      [35,51,'Image sized to the screen','Shorter on Safari so brand and price clear the toolbar.','P2 P6'],
+      [90,63,'View similar & Wishlist','Icon buttons on the image with 44 pt hit areas.','P2'],
+      [30,73.4,'Brand above the price bar','Product identity stays visible in the first fold.','P1'],
+      [78,80,'Price bar above Safari’s toolbar','Price, discount, MRP and Add to Bag sit just above the bottom toolbar so they never collide.','P5 P6']]}
+  };
+  var hsCur='android';
+  function renderHS(key){
+    hsCur=key;var c=HS[key];
+    $('#hs-device').className='device '+key+' hs-device';
+    $('#hs-img').src=IMG+c.img;$('#hs-img').alt=c.alt;
+    var pins=$('#hs-pins'),list=$('#hs-list');pins.innerHTML='';list.innerHTML='';
+    c.pins.forEach(function(p,i){
+      var pin=el('button',{type:'button',class:'pin','aria-pressed':'false','aria-label':(i+1)+'. '+p[2],style:'--x:'+p[0]+'%;--y:'+p[1]+'%','data-i':i},String(i+1));
+      pins.appendChild(pin);
+      var tags=p[4]?'<span class="tags">'+p[4].split(' ').map(function(t){return '<span class="tag">'+t+'</span>'}).join('')+'</span>':'';
+      var li=el('li');li.appendChild(el('button',{type:'button',class:'hs-item','aria-pressed':'false','data-i':i},'<span class="hs-n">'+(i+1)+'</span><span class="hs-t">'+p[2]+'</span><span class="hs-d"><span>'+p[3]+'</span>'+tags+'</span>'));
+      list.appendChild(li);
+    });
+    pickHS(0);
+  }
+  function pickHS(i){$$('#hs-pins .pin,#hs-list .hs-item').forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.i===i)})}
+  document.addEventListener('click',function(e){var b=e.target.closest('#hs-pins .pin,#hs-list .hs-item');if(b)pickHS(+b.dataset.i)});
+  $$('[data-hs]').forEach(function(b){b.addEventListener('click',function(){$$('[data-hs]').forEach(function(x){x.setAttribute('aria-checked',x===b)});renderHS(b.dataset.hs)})});
+  renderHS('android');
+
+  /* ---------- Pricing flow ---------- */
+  var FLOW=[
+    ['flow-0-mweb-get-it-for.png','android','Best price on the PDP','"Get it for ₹1,100" sits under the product name with a Know how link, so the lowest price is visible without crowding the main price.'],
+    ['flow-1-prive-callout.png','ios','Privé early-access callout','Privé Gold members see their exclusive early-access price under the main price.'],
+    ['flow-2-taxes-animate.png','ios','Callout animates to taxes','After a moment the line animates to "Inclusive of all taxes & discounts", so one line never shows two messages.'],
+    ['flow-3-best-price-sheet.png','ios','Best price sheet','Tapping the banner opens a sheet with coupons to collect and offers that apply automatically.'],
+    ['flow-4-bag.png','android','Final price in the bag','"You pay" shows the final price including early access and offers, so nothing changes at checkout.'],
+    ['flow-5-price-breakup.png','android','Price breakup','The info icon opens a breakup. The MRP discount is struck because the early-access offer is the better deal.']
+  ];
+  var fi=0,steps=$('#flow-steps');
+  FLOW.forEach(function(f,i){var li=el('li');li.appendChild(el('button',{type:'button',class:'fs','data-i':i},'<span class="fs-n">'+(i+1)+'</span><span class="fs-t">'+f[2]+'</span><span class="fs-d">'+f[3]+'</span>'));steps.appendChild(li)});
+  function setFlow(i){fi=Math.max(0,Math.min(FLOW.length-1,i));var f=FLOW[fi];
+    $('.flow-device').className='device '+f[1]+' flow-device';$('#flow-img').src=IMG+f[0];$('#flow-img').alt='Step '+(fi+1)+': '+f[2]+'. '+f[3];
+    $$('.fs',steps).forEach(function(b,k){if(k===fi)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
+    $('#flow-prev').disabled=fi===0;$('#flow-next').textContent=fi===FLOW.length-1?'Start again':'Next step';}
+  steps.addEventListener('click',function(e){var b=e.target.closest('.fs');if(b)setFlow(+b.dataset.i)});
+  $('#flow-prev').addEventListener('click',function(){setFlow(fi-1)});
+  $('#flow-next').addEventListener('click',function(){setFlow(fi===FLOW.length-1?0:fi+1)});
+  setFlow(0);
+
+  /* ---------- Social proof surface switch ---------- */
+  $$('[data-sp]').forEach(function(b){b.addEventListener('click',function(){
+    var v=b.dataset.sp.split('|');$$('[data-sp]').forEach(function(x){x.setAttribute('aria-checked',x===b)});
+    $('#sp-device').className='device '+v[1]+' sm';$('#sp-img').src=IMG+v[0];$('#sp-img').alt=b.textContent+' with social proof strip';
+  })});
+
+  /* ---------- Radio-style segmented controls: arrow keys ---------- */
+  $$('[role="radiogroup"]').forEach(function(g){var bs=$$('[role="radio"]',g);bs.forEach(function(b,i){b.tabIndex=b.getAttribute('aria-checked')==='true'?0:-1;
+    b.addEventListener('keydown',function(e){var k=null;if(e.key==='ArrowRight'||e.key==='ArrowDown')k=(i+1)%bs.length;if(e.key==='ArrowLeft'||e.key==='ArrowUp')k=(i-1+bs.length)%bs.length;if(k!==null){e.preventDefault();bs[k].click();bs[k].focus()}});
+    b.addEventListener('click',function(){bs.forEach(function(x){x.tabIndex=x===b?0:-1})});
+  })});
+
+  /* ---------- Platform tabs (#ios #android #mweb) ---------- */
+  var tabs=$$('.seg[role="tablist"] [role="tab"]');
+  function select(id,focus){
+    tabs.forEach(function(t){var on=t.id==='tab-'+id;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;$('#'+t.getAttribute('aria-controls')).hidden=!on;if(on&&focus)t.focus()});
+    store('pdp-tab',id);
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){select(t.id.slice(4))});
+    t.addEventListener('keydown',function(e){var n=null;if(e.key==='ArrowRight')n=(i+1)%tabs.length;if(e.key==='ArrowLeft')n=(i-1+tabs.length)%tabs.length;if(e.key==='Home')n=0;if(e.key==='End')n=tabs.length-1;if(n!==null){e.preventDefault();select(tabs[n].id.slice(4),true)}});
+  });
+  var saved=store('pdp-tab');if(saved&&['ios','android','mweb'].indexOf(saved)>-1)select(saved);
+  function fromHash(){var h=(location.hash||'').slice(1);if(['ios','android','mweb'].indexOf(h)>-1){select(h);$('#solutions').scrollIntoView()}}
+  fromHash();window.addEventListener('hashchange',fromHash);
+
+  /* ---------- Reading progress + bar animation ---------- */
+  var bar=$('#progress-bar');
+  function prog(){var d=document.documentElement,max=d.scrollHeight-d.clientHeight;bar.style.width=(max>0?Math.min(100,d.scrollTop/max*100):0)+'%'}
+  window.addEventListener('scroll',prog,{passive:true});prog();
+  var bars=$('.bars');
+  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){bars.classList.add('in');io.disconnect()}})},{threshold:.4});io.observe(bars)}
+
+  /* ---------- Lightbox ---------- */
+  var dlg=$('#lightbox'),lbImg=$('#lb-img'),lbCap=$('#lb-cap'),last=null;
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.zoom');if(!b)return;var img=b.querySelector('img');last=b;
+    lbImg.src=img.currentSrc||img.src;lbImg.alt=img.alt;lbImg.className=(img.naturalWidth&&img.naturalWidth<=400)?'phone':'';
+    lbCap.textContent=b.getAttribute('data-caption')||img.alt;
+    if(dlg.showModal)dlg.showModal();
+  });
+  dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close()});
+  dlg.addEventListener('close',function(){if(last)last.focus()});
+})();
+</script>
